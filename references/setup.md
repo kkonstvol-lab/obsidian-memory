@@ -157,7 +157,71 @@ Install obsidian-git plugin on each device and configure pull on startup.
 
 ---
 
-## Step 6: First Log Entry
+## Step 6: Register Vault Path in Claude's Memory
+
+**This step is critical.** Without it, Claude won't know where your vault is in new sessions and will ask every time.
+
+### 6a. Global fallback — `~/.claude/CLAUDE.md`
+
+Create this file so Claude knows your vault path in any session, regardless of working directory:
+
+**macOS/Linux:** `~/.claude/CLAUDE.md`
+**Windows:** `C:\Users\{YOU}\.claude\CLAUDE.md`
+
+```markdown
+# Global Claude Code Instructions
+
+## Obsidian Vault
+
+**Path:** `/path/to/your/obsidian-vault/`
+
+Key folders:
+- `inbox/` — incoming files (or `00-inbox/` — whatever you named it)
+- `wiki/` — LLM knowledge base (Claude manages)
+- `memory/` — agent operational memory
+- `raw-sources/` — original sources (pdfs/, articles/, converted/)
+- `templates/` — page templates
+```
+
+Replace `/path/to/your/obsidian-vault/` with your actual vault path.
+
+### 6b. Project-level infrastructure file
+
+If you work from a specific Claude Code workspace directory, create an `infrastructure.md` in that project's native memory folder. This gets auto-loaded as system context in every session.
+
+**Claude Code project memory location:**
+- macOS/Linux: `~/.claude/projects/{project-slug}/memory/infrastructure.md`
+- Windows: `C:\Users\{YOU}\.claude\projects\{project-slug}\memory\infrastructure.md`
+
+The `{project-slug}` matches your workspace path with slashes replaced by dashes.
+
+```markdown
+# Infrastructure — Key Paths
+
+## Obsidian Vault
+
+**Vault root:** `/path/to/your/obsidian-vault/`
+
+Key folders:
+- `inbox/` — incoming files for processing
+- `wiki/` — LLM Wiki (knowledge, Claude manages)
+- `memory/` — agent operational context
+- `raw-sources/` — originals (pdfs/, articles/, converted/)
+- `templates/` — page templates
+
+**Git remote:** `git@github.com:{username}/{vault-repo}.git`
+```
+
+Then add a line to that project's `MEMORY.md` index:
+```markdown
+- [Infrastructure](infrastructure.md) — vault path, key folders, git remote
+```
+
+**Why both files?** The global `CLAUDE.md` covers any session. The project `infrastructure.md` gets auto-loaded with richer context when working from your main workspace.
+
+---
+
+## Step 7: First Log Entry
 
 Write the initialization entry in `wiki/log.md`:
 
@@ -180,5 +244,6 @@ Your vault now has:
 - ✅ Templates for all 5 wiki page types
 - ✅ Schema file telling Claude the rules (`wiki/CLAUDE.md`)
 - ✅ Operation log tracking everything that happens
+- ✅ Vault path registered in Claude's memory — no more "where is your vault?" in new sessions
 
 **Next step:** Start your first INGEST. Pick a book, article, or PDF you've read recently and process it into the wiki. See the INGEST workflow in SKILL.md.
