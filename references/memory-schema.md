@@ -1,0 +1,243 @@
+# Memory Schema — Agent Operational Context
+
+The `memory/` layer is the agent's operational brain — what it knows about the current work context, decisions made, projects in flight, and tools available.
+
+**Key distinction:** memory ≠ wiki. Memory is session state and operational context. Wiki is accumulated knowledge from sources. Never duplicate content between them.
+
+---
+
+## File Types
+
+### memory_active.md — Current Focus
+**Load order: #1, always**
+
+The "what matters right now" file. Maximum 15 lines. Not a journal — a live snapshot.
+
+```markdown
+---
+updated: YYYY-MM-DDTHH:MM
+type: memory-active
+---
+
+# Active Memory
+
+## Current Focus
+[1-3 lines: what is being worked on right now]
+
+## Infrastructure Status
+- [tool/system]: [status]
+
+## Blockers
+- [blocker if any, or "none"]
+
+## This Week
+- [ ] task 1
+- [ ] task 2
+```
+
+**Rule:** When this file exceeds 20 lines, trim it. Old focus goes to memory_projects or archive.
+
+---
+
+### memory_decisions.md — Global Conventions
+**Load order: #2, always**
+
+Architectural and workflow decisions that apply across all work. Things that would take time to re-derive.
+
+```markdown
+## Decisions
+
+- Decision description [confidence:high|medium|low] [source:manual|doc|tool|research]
+- Another decision...
+```
+
+Format each decision as a single line. If a decision is reversed, update the existing line — don't add a new one.
+
+---
+
+### memory_projects.md — Project Registry
+
+Active and planned projects. One section per project.
+
+```markdown
+## {Project Name}
+- Status: active | planning | paused | completed
+- Stack: [technologies]
+- Goal: [one line]
+- Repo: {repo-link}
+- Last updated: YYYY-MM-DD
+```
+
+---
+
+### memory_tools.md — Tools and Infrastructure
+
+Every tool, plugin, MCP server, IDE setting that has been set up and verified.
+
+```markdown
+## {Tool Name}
+- Version: x.x.x
+- Status: active | broken | deprecated
+- Purpose: [what it does]
+- Config: [where config lives]
+- Notes: [anything non-obvious]
+```
+
+---
+
+### memory_clients.md — Clients and Contacts
+
+For agency/freelance work. One section per client.
+
+```markdown
+## {Client Name}
+- Status: active | prospect | inactive
+- Contact: [name, channel]
+- Key context: [what they need, preferences, constraints]
+- Projects: [[project-name]]
+```
+
+---
+
+### memory_repos.md — Repositories and Codebases
+
+Repos that have been worked on or studied.
+
+```markdown
+## {repo-name}
+- URL: https://github.com/...
+- Purpose: [what it does]
+- Status: active | reference | archived
+- Key files: [entry points, config, schema]
+- Notes: [architecture decisions, gotchas]
+```
+
+---
+
+### projects/{name}/ — Per-Project Deep Context
+
+For active projects, create a subdirectory with detailed files:
+- `context.md` — product/market/positioning context (read by all project-related agents)
+- `decisions.md` — project-specific technical decisions
+- `tasks.md` — current task list with status
+- `log.md` — project operation log
+
+---
+
+## Load Order
+
+At the start of any agent session, load memory files in this order:
+
+```
+1) memory_active.md          ← ALWAYS first (current focus, blockers)
+2) memory_decisions.md       ← ALWAYS second (global conventions)
+3) domain memory by context  ← route by session keywords (see Routing)
+4) project-specific files    ← if working on a specific project
+5) max 2 related domains     ← by trigger keywords
+```
+
+Loading too much memory = slow, unfocused sessions. Load the minimum needed.
+
+---
+
+## Routing
+
+Context-aware routing: match session keywords to memory files.
+
+**routing.json schema:**
+
+```json
+{
+  "routes": {
+    "coding": {
+      "primary": ["memory_decisions.md", "memory_tools.md", "memory_repos.md"],
+      "relation_triggers": {
+        "to_projects": "project_triggers",
+        "to_clients": "client_triggers"
+      }
+    },
+    "project-mgmt": {
+      "primary": ["memory_decisions.md", "memory_projects.md", "memory_clients.md"],
+      "relation_triggers": {
+        "to_repos": "repo_triggers",
+        "to_tools": "tool_triggers"
+      }
+    },
+    "research": {
+      "primary": ["memory_decisions.md", "memory_repos.md"],
+      "relation_triggers": {
+        "to_tools": "tool_triggers"
+      }
+    },
+    "default": {
+      "primary": ["memory_decisions.md"],
+      "relation_triggers": {
+        "to_projects": "project_triggers",
+        "to_tools": "tool_triggers"
+      }
+    }
+  },
+  "relations": {
+    "to_projects": ["memory_projects.md"],
+    "to_clients": ["memory_clients.md"],
+    "to_repos": ["memory_repos.md"],
+    "to_tools": ["memory_tools.md"]
+  },
+  "trigger_sets": {
+    "project_triggers": ["project", "deadline", "milestone", "status", "MVP"],
+    "client_triggers": ["client", "customer", "requirements", "brief"],
+    "repo_triggers": ["github", "repo", "codebase", "git", "branch", "PR", "commit"],
+    "tool_triggers": ["MCP", "plugin", "obsidian", "claude", "IDE", "npm", "tool"]
+  }
+}
+```
+
+Add your own routes and trigger sets as your context grows.
+
+---
+
+## Key Principles
+
+These are distilled from production agent systems (witcheer, ALIVE, gstack):
+
+### 1. A session with no writes is a failure
+Any session that reads from memory or wiki must write something back — update log, record a decision, capture a finding. If nothing was worth writing, the session was passive, not active.
+
+### 2. Corrections > abstract rules
+151 concrete examples beat 39,000 characters of abstract instructions. When you edit an AI draft, log what changed and why. Save these corrections in a `voice-corrections.md` file. All future drafts read this file before generating.
+
+```markdown
+# Voice Corrections
+
+## YYYY-MM-DD
+- Changed: [what the AI wrote]
+- To: [what you rewrote it as]
+- Why: [the principle behind the change]
+```
+
+### 3. Session idle timeout
+Set Claude Code session idle timeout to 60 minutes, not the default 1440. Long sessions accumulate stale context. Short sessions stay focused.
+
+### 4. Source diversity
+In research prompts, explicitly specify source order. Without instructions, models default to the same sources for everything (e.g., Reddit for all research). Specify: "Check academic papers first, then industry reports, then community forums."
+
+### 5. Compounding context
+The memory system compounds over time. Each session that writes high-quality notes makes the next session faster. The value is not in any single session — it's in the accumulation.
+
+### 6. Memory ≠ journal
+memory_active.md is not a log. It's a dashboard. Maximum 15 lines. Old focus goes to projects/ or archive. If you find yourself appending, you're journaling — trim instead.
+
+---
+
+## Maintenance
+
+Weekly:
+- Review `memory_active.md` — trim anything that's no longer active
+- Scan `memory_decisions.md` — are any decisions outdated?
+- Archive completed projects from `memory_projects.md` to `archive/`
+- Run LINT on wiki (see wiki-schema.md)
+
+Monthly:
+- Review all memory files for accuracy
+- Prune stale tool entries from `memory_tools.md`
+- Update `routing.json` if new domains have emerged
