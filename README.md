@@ -21,6 +21,11 @@ Enables Claude to operate two persistent systems inside your Obsidian vault:
 - Context-aware loading: Claude loads the right files at session start
 - Compounds over time: each session makes the next one faster
 
+**Self-Improvement Loop** (`memory/memory_corrections.md` + 3 files) — compounding agent quality:
+- Log every logical/process mistake → detect patterns over time
+- Track improvement ideas → ship them into skills
+- Daily HEARTBEAT cron at 10:00 — reads corrections, surfaces patterns, stays calibrated
+
 ---
 
 ## Install
@@ -97,6 +102,10 @@ vault/
 │   ├── memory_decisions.md
 │   ├── memory_projects.md
 │   ├── memory_tools.md
+│   ├── memory_corrections.md     ← self-improvement: logical/process errors
+│   ├── memory_improvements_backlog.md  ← improvement ideas (Active/Done)
+│   ├── memory_metrics.md         ← weekly snapshot
+│   ├── memory_heartbeat.md       ← daily self-check log (cron 10:00)
 │   └── projects/{name}/
 └── raw-sources/
     ├── pdfs/
@@ -113,6 +122,22 @@ vault/
 3. **Separation** — wiki = knowledge, memory = operational context, never duplicate
 4. **Quality > quantity** — 5 well-linked pages beat 20 isolated ones
 5. **Compound context** — every session makes the next one faster
+6. **Self-improvement loop** — log errors in `memory_corrections.md`, run daily HEARTBEAT to detect patterns, ship fixes into skills
+
+## Self-Improvement Loop
+
+The memory layer includes a 4-file self-improvement system:
+
+| File | Purpose | Who writes |
+|------|---------|-----------|
+| `memory_corrections.md` | Logical/process errors (NOT style/tone) | User correction + session-summary |
+| `memory_improvements_backlog.md` | Improvement ideas (Active/Done) | HEARTBEAT + session-summary |
+| `memory_metrics.md` | Weekly snapshot (errors, improvements shipped) | HEARTBEAT every Sunday |
+| `memory_heartbeat.md` | Daily self-check log | HEARTBEAT cron at 10:00 local time |
+
+**Distinct from style corrections:** `memory_corrections.md` captures *what the agent did wrong procedurally* (skipped a step, missed a file). Style and tone edits belong in a separate `voice-corrections.md` (see `references/memory-schema.md` principle #2).
+
+**HEARTBEAT cron:** create via `mcp__scheduled-tasks__create_scheduled_task` with `cronExpression: "0 10 * * *"`. The cron reads corrections, detects repeating patterns (2+ same root cause), flags stale backlog items, and prepends a daily entry.
 
 ---
 

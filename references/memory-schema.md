@@ -124,6 +124,60 @@ For active projects, create a subdirectory with detailed files:
 
 ---
 
+## Self-Improvement Loop (4 files)
+
+Layer for compounding agent quality. Distinct from `voice-corrections.md` (which handles style/tone only).
+
+### memory_corrections.md — Logical/Process Errors
+**Load order: #3 — before non-trivial tasks (last 5 entries)**
+
+Prepend-only log of process/logic mistakes the agent made. NOT for style/tone (those go to `voice-corrections.md`).
+
+```markdown
+## YYYY-MM-DD — {short title}
+- **Error:** what went wrong
+- **Context:** task / file / skill
+- **Root cause:** which principle was violated, which step skipped
+- **Fix:** how to do it correctly next time
+- **Rule extracted:** → `feedback_*.md` if generalizable, else N/A
+```
+
+Sources: explicit user correction, session-summary self-detection, HEARTBEAT pattern detection.
+
+### memory_improvements_backlog.md — Improvement Ideas
+
+Ideas for improving the agent, skills, memory, or workflow. Three sections: Active / In Progress / Done.
+
+```markdown
+- [ ] {Idea} — Impact: H/M/L | Effort: H/M/L | Source: {heartbeat|user|session-summary} | Added: YYYY-MM-DD
+```
+
+Done items archived weekly to `archive/`.
+
+### memory_metrics.md — Weekly Snapshot
+
+Updated by HEARTBEAT every Sunday. Single growing table.
+
+| Week | Sessions | Corrections | Backlog done | Error patterns | Improvements shipped |
+
+### memory_heartbeat.md — Daily Self-Check Log
+
+Updated daily at 10:00 MSK by `heartbeat-self-check` cron (`mcp__scheduled-tasks`). Prepend-only.
+
+```markdown
+## YYYY-MM-DD
+- **Read:** memory_active, corrections (10), backlog active, insights
+- **Patterns in corrections:** {repeating? clean slate?}
+- **Stale backlog:** {items idle 7+ days}
+- **New ideas:** {from prior day's work}
+- **Will try today:** {1-2 concrete behavior changes}
+- **Metrics update:** N/A or "weekly snapshot updated"
+```
+
+**The "session with no writes is a failure" rule applies:** if nothing to record, write "clean slate, no new patterns".
+
+---
+
 ## Load Order
 
 At the start of any agent session, load memory files in this order:
@@ -131,9 +185,10 @@ At the start of any agent session, load memory files in this order:
 ```
 1) memory_active.md          ← ALWAYS first (current focus, blockers)
 2) memory_decisions.md       ← ALWAYS second (global conventions)
-3) domain memory by context  ← route by session keywords (see Routing)
-4) project-specific files    ← if working on a specific project
-5) max 2 related domains     ← by trigger keywords
+3) memory_corrections.md     ← BEFORE non-trivial tasks (last 5 entries)
+4) domain memory by context  ← route by session keywords (see Routing)
+5) project-specific files    ← if working on a specific project
+6) max 2 related domains     ← by trigger keywords
 ```
 
 Loading too much memory = slow, unfocused sessions. Load the minimum needed.

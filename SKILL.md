@@ -31,6 +31,10 @@ vault/
 │   ├── memory_tools.md      # Tools, plugins, MCP servers
 │   ├── memory_clients.md    # Clients and contacts
 │   ├── memory_repos.md      # Repos and codebases
+│   ├── memory_corrections.md  # Logical/process errors (NOT style — see voice-corrections)
+│   ├── memory_improvements_backlog.md  # Improvement ideas (Active/In Progress/Done)
+│   ├── memory_metrics.md    # Weekly snapshot (HEARTBEAT Sundays)
+│   ├── memory_heartbeat.md  # Daily self-check log (cron 10:00 MSK)
 │   └── projects/{name}/     # Deep context per project
 └── raw-sources/          # Immutable originals — Claude NEVER edits these
     ├── pdfs/
@@ -119,9 +123,15 @@ Write a LINT entry to `wiki/log.md` with findings and actions taken.
 Load in this order at the start of a session:
 1. `memory/memory_active.md` — ALWAYS first (current focus, blockers)
 2. `memory/memory_decisions.md` — ALWAYS second (global conventions)
-3. Domain memory based on session context (see `references/memory-schema.md`)
-4. Project-specific files if working on a specific project
-5. Maximum 2 additional related domain files
+3. `memory/memory_corrections.md` — BEFORE non-trivial tasks, last 5 entries (avoid repeating past mistakes)
+4. Domain memory based on session context (see `references/memory-schema.md`)
+5. Project-specific files if working on a specific project
+6. Maximum 2 additional related domain files
+
+**Self-improvement loop files** (read on demand, not always):
+- `memory/memory_improvements_backlog.md` — when reflecting on agent quality, planning improvements
+- `memory/memory_heartbeat.md` — last entry, when checking systemic patterns
+- `memory/memory_metrics.md` — when reviewing weekly performance
 
 ---
 
