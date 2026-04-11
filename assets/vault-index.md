@@ -39,6 +39,40 @@ Catalog of all wiki pages. Updated on every INGEST operation.
 |------|--------|------|
 | — | — | — |
 
+## Wings (Robby Palace)
+
+### Projects
+
+| File | Client | Status | Updated |
+|------|--------|--------|---------|
+| — | — | — | — |
+
+### People
+
+| File | Relationship | Domain | Updated |
+|------|-------------|--------|---------|
+| — | — | — | — |
+
+```dataview
+TABLE wing_type AS "Type", status AS "Status", updated AS "Updated"
+FROM "wiki/wings"
+WHERE type = "wing"
+SORT updated DESC
+```
+
+## Drawers (Session Logs)
+
+| File | Date | Compiled | Wings Updated |
+|------|------|----------|---------------|
+| — | — | — | — |
+
+```dataview
+TABLE session_date AS "Date", compiled AS "Compiled", wings_updated AS "Wings"
+FROM "wiki/drawers"
+WHERE type = "drawer"
+SORT session_date DESC
+```
+
 ## Synthesis
 
 | File | Theme | Domain | Date |

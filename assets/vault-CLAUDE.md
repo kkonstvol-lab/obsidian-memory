@@ -24,6 +24,8 @@ Three layers:
 | concept | `wiki/concepts/` | `{name}.md` | Methodology, framework, idea |
 | synthesis | `wiki/synthesis/` | `synthesis-{topic}.md` | Cross-source analysis or answer |
 | domain | `wiki/domains/` | `domain-{name}.md` | Map of Content — thematic hub |
+| wing | `wiki/wings/` | `person-{slug}.md` / `project-{slug}.md` | Person or project profile (5 halls: facts, events, discoveries, preferences, advice/decisions) |
+| drawer | `wiki/drawers/` | `drawer-YYYY-MM-DD-{slug}.md` | Immutable session log. NEVER edit after creation |
 
 **Entity rule:** Only create a separate entity file if the entity appears in 2+ sources. Otherwise mention inline in the summary.
 
@@ -65,6 +67,21 @@ source_author: "Author Name"
 entity_type: person | company | tool | product
 ```
 
+### Additional fields for wing:
+```yaml
+wing_type: person | project
+relationship: client | mentor | contact | colleague | partner  # person only
+client: "[[person-slug]]"  # project only
+```
+
+### Additional fields for drawer:
+```yaml
+session_date: YYYY-MM-DD
+compiled: false | true
+wings_updated: []  # filled after COMPILE
+status: locked  # always locked — drawers are immutable
+```
+
 ---
 
 ## Tag Taxonomy
@@ -73,7 +90,9 @@ entity_type: person | company | tool | product
 
 **Domain** (define your own, examples): `domain/ai`, `domain/marketing`, `domain/business`, `domain/learning`, `domain/engineering`, `domain/psychology`, `domain/personal`
 
-**Status:** `status/draft`, `status/active`, `status/stale`
+**Palace:** `wiki/wing`, `wing/person`, `wing/project`, `wiki/drawer`
+
+**Status:** `status/draft`, `status/active`, `status/stale`, `status/locked`
 
 Obsidian slash notation: slash = hierarchy in Tag Pane.
 
@@ -102,6 +121,39 @@ Obsidian slash notation: slash = hierarchy in Tag Pane.
 5. If synthesis is valuable → save as `wiki/synthesis/synthesis-{topic}.md`
 6. Update `wiki/log.md`
 
+### COMPILE — Compiling drawers into wings
+
+Run after `/session-summary` or manually.
+
+1. Find all drawers in `wiki/drawers/` where `compiled: false`
+2. For each drawer, extract:
+   a. People mentioned → find or create `wiki/wings/person-{slug}.md`
+   b. Projects mentioned → find or create `wiki/wings/project-{slug}.md`
+   c. Decisions → add to **Decisions** section of relevant wing
+   d. Facts → add to **Facts** section
+   e. Events → add to **Events** section with date
+   f. Insights → add to **Discoveries** section
+   g. Preferences → add to **Preferences** section
+   h. New concepts/entities → update `wiki/concepts/`, `wiki/entities/` if significant
+3. In each updated wing:
+   - Append info to the appropriate hall (section)
+   - Update `updated` in frontmatter
+   - Add `[[drawer-YYYY-MM-DD-slug]]` to **Sources** section (provenance)
+4. Mark drawer as compiled:
+   - `compiled: true`
+   - `wings_updated: [list of updated wings]`
+5. Update `wiki/index.md` if new wings were created
+6. Append COMPILE entry to `wiki/log.md`
+7. Mini-lint: verify wikilinks in updated files
+
+**Provenance in wings** — each fact references its drawer source:
+```markdown
+## Facts
+- Works at Acme Corp, engineering lead ← [[drawer-2026-04-11-meeting]]
+```
+
+---
+
 ### LINT — Health check
 
 Run periodically. Check:
@@ -113,6 +165,14 @@ Run periodically. Check:
 5. Unprocessed sources — files in `raw-sources/converted/` without a summary
 6. Index drift — pages exist but not in `wiki/index.md`
 7. Duplicate entities — two files about the same entity
+
+**Palace-specific checks:**
+
+8. Uncompiled drawers — `compiled: false` older than 3 days
+9. Empty halls — wing sections with no content after 30 days
+10. Tunnel candidates — same entity mentioned in 3+ wings without a cross-link
+11. Staleness by type — person wings > 60 days, project wings > 30 days without update
+12. Contradictions — same fact with different values across wings
 
 Write a LINT entry to `wiki/log.md` with findings and actions taken.
 
@@ -127,3 +187,6 @@ Write a LINT entry to `wiki/log.md` with findings and actions taken.
 5. **No duplication:** Don't duplicate information between `wiki/` and `memory/`.
 6. **Raw sources:** NEVER edit files in `raw-sources/`.
 7. **Quality over quantity:** 5 well-linked pages beat 20 isolated ones.
+8. **Drawers are immutable:** after creation, a drawer is NEVER edited. It is the source of truth for what happened.
+9. **Entity vs Wing:** entity = what it IS (company, tool). Wing = your relationship with it (project work, person interactions). Don't duplicate.
+10. **Compile after sessions:** every significant session ends with drawer → compile → wing updates.

@@ -9,10 +9,14 @@ Full specification for the `wiki/` knowledge layer. This file extends the SKILL.
 | Type | Folder | Naming | Purpose |
 |------|--------|--------|---------|
 | summary | `wiki/summaries/` | `summary-{slug}.md` | Digest of a single source |
-| entity | `wiki/entities/` | `{name}.md` | Person, company, tool, product |
+| entity | `wiki/entities/` | `{name}.md` | Person, company, tool, product — what it IS |
 | concept | `wiki/concepts/` | `{name}.md` | Methodology, framework, idea |
 | synthesis | `wiki/synthesis/` | `synthesis-{topic}.md` | Cross-source analysis or answer |
 | domain | `wiki/domains/` | `domain-{name}.md` | Map of Content — thematic hub |
+| wing | `wiki/wings/` | `person-{slug}.md` / `project-{slug}.md` | Your relationship with a person or project (5 halls) |
+| drawer | `wiki/drawers/` | `drawer-YYYY-MM-DD-{slug}.md` | Immutable session log — never edit after creation |
+
+**Entity vs Wing distinction:** An entity captures *what something is* (Anthropic = AI safety company). A wing captures *your relationship with it* (project-anthropic-integration = timeline of your work with them). Don't duplicate between them — cross-link instead.
 
 **Slug format:** lowercase, hyphens instead of spaces, no special characters.
 Examples: `summary-atomic-habits.md`, `summary-ycombinator-startup-manual.md`
@@ -57,6 +61,23 @@ source_author: "Author Name"
 entity_type: person | company | tool | product
 ```
 
+### Additional fields for wing:
+
+```yaml
+wing_type: person | project
+relationship: client | mentor | contact | colleague | partner  # person only
+client: "[[person-slug]]"  # project only
+```
+
+### Additional fields for drawer:
+
+```yaml
+session_date: YYYY-MM-DD
+compiled: false | true
+wings_updated: []  # filled after COMPILE — list of wing files updated
+status: locked    # always locked — drawers are immutable
+```
+
 ---
 
 ## Tag Taxonomy
@@ -66,6 +87,8 @@ Tags use Obsidian slash notation (slash = hierarchy in Tag Pane).
 ### Structural tags (always use these):
 - `wiki` — all wiki pages
 - `wiki/summary`, `wiki/entity`, `wiki/concept`, `wiki/synthesis`, `wiki/domain`
+- `wiki/wing`, `wing/person`, `wing/project` — Robby Palace wing pages
+- `wiki/drawer` — Robby Palace session log pages
 - `raw-source` — for files in raw-sources/ if you tag them
 
 ### Domain tags (define your own, examples):
@@ -151,9 +174,65 @@ Run weekly or before major work sessions. Check each item:
 | Index drift | Wiki pages missing from `wiki/index.md` | Add missing rows to index |
 | Duplicate entities | Two files for the same entity | Merge into one, update all references |
 
+**Palace-specific checks (add to weekly LINT):**
+
+| Check | How | Fix |
+|-------|-----|-----|
+| Uncompiled drawers | Find drawers with `compiled: false` older than 3 days | Run COMPILE |
+| Empty halls | Wing sections with no content, wing > 30 days old | Add or note as not applicable |
+| Tunnel candidates | Entity name appears in 3+ wings without cross-link | Add `[[wikilink]]` to Relations sections |
+| Stale wings by type | Person wings > 60 days, project wings > 30 days without `updated` change | Review, update, or change status |
+| Contradictions | Same fact with different values across wings | Verify with drawer sources, fix the wing with wrong value |
+
 After LINT: write a LINT entry to `wiki/log.md` with findings and what was fixed.
 
 ---
+
+## COMPILE — Workflow Detail
+
+Triggered after `/session-summary` or by running `/compile` manually.
+
+1. List all files in `wiki/drawers/` — filter those with `compiled: false`
+2. For each uncompiled drawer:
+   - Read full content
+   - Identify people mentioned → map to `person-{slug}` wings
+   - Identify projects mentioned → map to `project-{slug}` wings
+   - Classify each piece of information into a hall:
+     - **Facts** — stable attributes (role, stack, budget, city)
+     - **Events** — dated occurrences (meetings, releases, decisions)
+     - **Discoveries** — insights and learnings
+     - **Preferences** — how to work with them, requirements
+     - **Advice/Decisions** — strategic choices, recommendations
+3. For each wing to update:
+   - Read current wing content
+   - Append new entries to appropriate halls (do not duplicate)
+   - Provenance: each new entry ends with `← [[drawer-YYYY-MM-DD-slug]]`
+   - Update `updated` in frontmatter
+   - Add drawer to **Sources** section
+4. Mark drawer: `compiled: true`, `wings_updated: [list of wings]`
+5. Update `wiki/index.md` — add any new wings to the Wings tables
+6. Append COMPILE entry to `wiki/log.md`:
+   ```
+   ## YYYY-MM-DDTHH:MM — COMPILE | N drawers processed
+   - Drawers: drawer-YYYY-MM-DD-slug
+   - Wings updated: [list]
+   - Wings created: [list or —]
+   ```
+
+## WING — Creating a Profile
+
+Usage: `/wing person Name` or `/wing project Name`
+
+1. Generate slug: lowercase, hyphens (e.g., `person-john-smith`, `project-acme-redesign`)
+2. Check `wiki/wings/{slug}.md` doesn't already exist
+3. Search existing data for pre-fill:
+   - `wiki/entities/` — for matching entity page
+   - `wiki/summaries/` — for mentions
+   - `memory/memory_clients.md` — for client data
+4. Create from `templates/wing-person.md` or `templates/wing-project.md`
+5. Pre-fill halls from found data; add provenance `← [[source]]`
+6. Update `wiki/index.md` — add row to Wings section
+7. Append WING entry to `wiki/log.md`
 
 ## index.md Structure
 
@@ -189,6 +268,26 @@ After LINT: write a LINT entry to `wiki/log.md` with findings and what was fixed
 | File | Theme | Domain | Date |
 |------|-------|--------|------|
 | [[synthesis-topic]] | Topic | ai | 2026-01-01 |
+
+## Wings (Robby Palace)
+
+### Projects
+
+| File | Client | Status | Updated |
+|------|--------|--------|---------|
+| [[project-example]] | [[person-client]] | active | 2026-01-01 |
+
+### People
+
+| File | Relationship | Domain | Updated |
+|------|-------------|--------|---------|
+| [[person-example]] | client | marketing | 2026-01-01 |
+
+## Drawers (Session Logs)
+
+| File | Date | Compiled | Wings Updated |
+|------|------|----------|---------------|
+| [[drawer-2026-01-01-example]] | 2026-01-01 | true | project-example |
 
 ---
 
@@ -237,4 +336,19 @@ Chronological log of all operations.
 - Checked: N pages
 - Fixed: list of issues fixed
 - Remaining: known issues deferred
+
+---
+
+## YYYY-MM-DDTHH:MM — COMPILE | N drawers processed
+
+- Drawers: drawer-YYYY-MM-DD-slug
+- Wings updated: person-example, project-example
+- Wings created: —
+
+---
+
+## YYYY-MM-DDTHH:MM — WING | Created person-example
+
+- Type: person
+- Pre-filled from: [[entity-example]], [[summary-example]]
 ```

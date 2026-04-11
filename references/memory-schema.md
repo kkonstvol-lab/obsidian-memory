@@ -183,13 +183,24 @@ Updated daily at 10:00 MSK by `heartbeat-self-check` cron (`mcp__scheduled-tasks
 At the start of any agent session, load memory files in this order:
 
 ```
-1) memory_active.md          ← ALWAYS first (current focus, blockers)
-2) memory_decisions.md       ← ALWAYS second (global conventions)
+0) identity.md               ← L0 context — ALWAYS first (~100 tokens, vault root)
+1) memory_active.md          ← ALWAYS (current focus, blockers)
+2) memory_decisions.md       ← ALWAYS (global conventions)
 3) memory_corrections.md     ← BEFORE non-trivial tasks (last 5 entries)
 4) domain memory by context  ← route by session keywords (see Routing)
 5) project-specific files    ← if working on a specific project
 6) max 2 related domains     ← by trigger keywords
+7) wiki/wings/relevant-*.md  ← L2: if working with a specific person or project
 ```
+
+**4-layer context loading model:**
+
+| Layer | Size | Files | When |
+|-------|------|-------|------|
+| L0 Identity | ~100 tokens | `identity.md` (vault root) | Every session |
+| L1 Critical | ~500 tokens | `memory_active.md` + `memory_decisions.md` | Every session |
+| L2 Wings | ~200 tokens each | `wiki/wings/person-*.md`, `project-*.md` | On-demand by context |
+| L3 Deep | unlimited | `wiki/drawers/*`, `raw-sources/*` | Explicit search |
 
 Loading too much memory = slow, unfocused sessions. Load the minimum needed.
 
@@ -224,6 +235,12 @@ Context-aware routing: match session keywords to memory files.
         "to_tools": "tool_triggers"
       }
     },
+    "wing-context": {
+      "primary": ["memory_decisions.md", "memory_clients.md"],
+      "relation_triggers": {
+        "to_wings": "wing_triggers"
+      }
+    },
     "default": {
       "primary": ["memory_decisions.md"],
       "relation_triggers": {
@@ -236,13 +253,15 @@ Context-aware routing: match session keywords to memory files.
     "to_projects": ["memory_projects.md"],
     "to_clients": ["memory_clients.md"],
     "to_repos": ["memory_repos.md"],
-    "to_tools": ["memory_tools.md"]
+    "to_tools": ["memory_tools.md"],
+    "to_wings": ["wiki/wings/"]
   },
   "trigger_sets": {
     "project_triggers": ["project", "deadline", "milestone", "status", "MVP"],
     "client_triggers": ["client", "customer", "requirements", "brief"],
     "repo_triggers": ["github", "repo", "codebase", "git", "branch", "PR", "commit"],
-    "tool_triggers": ["MCP", "plugin", "obsidian", "claude", "IDE", "npm", "tool"]
+    "tool_triggers": ["MCP", "plugin", "obsidian", "claude", "IDE", "npm", "tool"],
+    "wing_triggers": ["person", "client", "contact", "profile", "wing", "who is", "tell me about"]
   }
 }
 ```

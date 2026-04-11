@@ -39,9 +39,14 @@ vault/
 │   ├── entities/
 │   ├── concepts/
 │   ├── synthesis/
-│   └── domains/
+│   ├── domains/
+│   ├── wings/          ← Robby Palace: person and project profiles
+│   └── drawers/        ← Robby Palace: immutable session logs
 ├── memory/
 │   └── projects/
+├── output/             ← Regeneratable artifacts (dashboards, reports)
+│   ├── dashboards/
+│   └── reports/
 ├── raw-sources/
 │   ├── pdfs/
 │   ├── articles/
@@ -60,11 +65,17 @@ Copy from this skill's `assets/` folder to your vault:
 | `vault-CLAUDE.md` | `wiki/CLAUDE.md` | Schema — tells Claude the rules |
 | `vault-index.md` | `wiki/index.md` | Catalog of all wiki pages |
 | `vault-log.md` | `wiki/log.md` | Operation log |
+| `identity.md` | `identity.md` (vault root) | L0 context — fill in your name, role, key rules |
 | `templates/wiki-summary.md` | `templates/wiki-summary.md` | Summary page template |
 | `templates/wiki-entity.md` | `templates/wiki-entity.md` | Entity page template |
 | `templates/wiki-concept.md` | `templates/wiki-concept.md` | Concept page template |
 | `templates/wiki-synthesis.md` | `templates/wiki-synthesis.md` | Synthesis page template |
 | `templates/wiki-domain.md` | `templates/wiki-domain.md` | Domain MOC template |
+| `templates/wing-person.md` | `templates/wing-person.md` | Person wing — 5 halls |
+| `templates/wing-project.md` | `templates/wing-project.md` | Project wing — 5 halls |
+| `templates/drawer.md` | `templates/drawer.md` | Immutable session log template |
+
+**After copying `identity.md`:** Open it and fill in your name, role, primary language, and any site-specific rules you always want Claude to follow. Keep it under 150 words — it's loaded every session.
 
 Then create initial memory files:
 
@@ -228,10 +239,11 @@ Write the initialization entry in `wiki/log.md`:
 ```markdown
 ## YYYY-MM-DDTHH:MM — INIT | System initialization
 
-- Created: wiki/, memory/, raw-sources/ structure
+- Created: wiki/, wiki/wings/, wiki/drawers/, memory/, raw-sources/, output/ structure
 - Created: wiki/CLAUDE.md, wiki/index.md, wiki/log.md
-- Created: templates/ (5 wiki templates)
-- Notes: LLM Wiki + Agent Memory system deployed.
+- Created: identity.md (L0 context)
+- Created: templates/ (8 templates: 5 wiki + wing-person + wing-project + drawer)
+- Notes: LLM Wiki + Agent Memory + Robby Palace system deployed.
 ```
 
 ---
@@ -241,9 +253,14 @@ Write the initialization entry in `wiki/log.md`:
 Your vault now has:
 - ✅ Wiki layer for accumulated knowledge (INGEST, QUERY, LINT)
 - ✅ Memory layer for agent operational context (load order, routing)
-- ✅ Templates for all 5 wiki page types
+- ✅ Robby Palace layer for person and project profiles (wings + drawers)
+- ✅ Output layer for regeneratable dashboards and reports
+- ✅ Templates for all 8 page types (5 wiki + wing-person + wing-project + drawer)
+- ✅ Identity file for L0 context loaded every session
 - ✅ Schema file telling Claude the rules (`wiki/CLAUDE.md`)
 - ✅ Operation log tracking everything that happens
 - ✅ Vault path registered in Claude's memory — no more "where is your vault?" in new sessions
 
 **Next step:** Start your first INGEST. Pick a book, article, or PDF you've read recently and process it into the wiki. See the INGEST workflow in SKILL.md.
+
+**Start using Robby Palace:** At the end of your first significant session, run `/session-summary` — it will create a drawer automatically. Then run `/compile` to push the session data into wings.
