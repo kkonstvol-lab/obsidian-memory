@@ -1,178 +1,234 @@
 # obsidian-memory
 
-A Claude Code skill for building and maintaining a persistent knowledge + memory system in Obsidian — based on the LLM Wiki pattern (Karpathy) and Robby Palace (MemPalace-inspired wings/halls/drawers).
+Скил для Claude Code — система постоянной памяти для AI-агентов на базе Obsidian. Объединяет LLM Wiki, Robby Palace, Self-Improvement Loop и Graphify knowledge graph в единый контур.
 
-**Claude is the programmer. Obsidian is the IDE. The wiki is the codebase.**
-
----
-
-## What it does
-
-Enables Claude to operate two persistent systems inside your Obsidian vault:
-
-**LLM Wiki** (`wiki/`) — an accumulated knowledge base that grows with every source you process:
-- Ingest any source (PDF, article, book, conversation) → structured summary page
-- Extract entities and concepts → linked pages with wikilinks
-- Organize by domain → thematic Maps of Content
-- Health-check weekly with LINT → broken links, orphans, stale content
-
-**Robby Palace** (`wiki/wings/` + `wiki/drawers/`) — persistent per-person and per-project memory:
-- Create a wing for any person or project → 5 structured halls: Facts, Events, Discoveries, Preferences, Advice/Decisions
-- Every session creates an immutable drawer (session log) → COMPILE updates wings automatically
-- Provenance: every fact in a wing links back to its source drawer
-- Tunnels: cross-wing connections via wikilinks, discoverable by LINT
-
-**Agent Memory** (`memory/`) — operational context that persists across sessions:
-- Current focus, active projects, global decisions
-- 4-layer loading model: L0 identity → L1 critical → L2 wings → L3 deep search
-- Compounds over time: each session makes the next one faster
-
-**Self-Improvement Loop** (`memory/memory_corrections.md` + 3 files) — compounding agent quality:
-- Log every logical/process mistake → detect patterns over time
-- Track improvement ideas → ship them into skills
-- Daily HEARTBEAT cron at 10:00 — reads corrections, surfaces patterns, stays calibrated
+**Claude — программист. Obsidian — IDE. Wiki — кодовая база.**
 
 ---
 
-## Install
+## Что делает
+
+Четыре взаимосвязанные системы внутри одного vault:
+
+**LLM Wiki** (`wiki/`) — накапливаемая база знаний:
+- Ingest любого источника (PDF, статья, книга, разговор) → структурированная страница-конспект
+- Извлечение сущностей и концептов → связанные страницы через wikilinks
+- Организация по доменам → тематические Maps of Content
+- Еженедельный LINT → битые ссылки, сироты, устаревший контент
+
+**Robby Palace** (`wiki/wings/` + `wiki/drawers/`) — постоянная память о людях и проектах:
+- Wing для любого человека или проекта → 5 залов: Facts, Events, Discoveries, Preferences, Advice/Decisions
+- Каждая сессия создаёт неизменяемый Drawer (лог сессии) → COMPILE обновляет Wings автоматически
+- Провенанс: каждый факт в Wing ссылается на исходный Drawer
+
+**Self-Improvement Loop** (`{private}/memory_corrections.md` + 3 файла) — агент учится на ошибках:
+- Логировать каждую логическую/процессную ошибку → обнаруживать паттерны
+- Трекать идеи улучшений → внедрять в скилы
+- Ежедневный HEARTBEAT cron в 10:00 → читает corrections, поверхностно выявляет паттерны, остаётся калиброванным
+
+**Graphify Knowledge Graph** (`memory/graph/`) — семантический слой поверх Wiki:
+- Автоматически извлекает связи между страницами через wikilinks → граф (NetworkX)
+- Leiden-кластеризация → тематические communities → кандидаты на новые MOC
+- MCP-сервер graphify → агенты делают `query_graph` перед grep
+- Выявляет неожиданные связи, которые ручными wikilinks не добавляются
+
+---
+
+## Мультиагентный сетап (Claude Code + Codex)
+
+Скил поддерживает работу нескольких агентов из одного vault без смешивания контекстов:
+
+```
+vault/
+├── 12-shared/    ← мировые факты (decisions, projects, clients, tools) — оба агента
+├── 12-claude/    ← приватная оперативка Claude Code
+├── 12-codex/     ← приватная оперативка Codex
+└── wiki/         ← база знаний — общая, оба агента
+```
+
+Каждый агент читает свой entry-point (`CLAUDE.md` или `AGENTS.md`), узнаёт `agent_id` и пути к своему `{private}` и общему `{shared}`. Self-Improvement Loop работает независимо для каждого — ошибки Codex не попадают в heartbeat Claude и наоборот.
+
+Для одного агента: используй `memory/` как единый корень, мультиагентное разделение опционально.
+
+---
+
+## Установка
 
 ```bash
 git clone https://github.com/kkonstvol-lab/obsidian-memory ~/.claude/skills/obsidian-memory
 ```
 
-Restart Claude Code. The skill will be available as `/obsidian-memory`.
+Перезапустить Claude Code. Скил доступен как `/obsidian-memory`.
 
 ---
 
-## Quick Start
+## Быстрый старт
 
-1. **Set up your vault** — follow `references/setup.md`
-2. **Drop in the schema** — copy `assets/vault-CLAUDE.md` → `wiki/CLAUDE.md` in your vault
-3. **Copy templates** — copy `assets/templates/` → `templates/` in your vault
-4. **Set up identity** — copy `assets/identity.md` → `identity.md` in your vault root, fill in name and role
-5. **First ingest** — say "ingest [source name] into my wiki"
-6. **First session summary** — at end of session, run `/session-summary` → creates drawer → run `/compile` → updates wings
+1. **Настроить vault** — следовать `references/setup.md`
+2. **Добавить схему** — скопировать `assets/vault-CLAUDE.md` → `wiki/CLAUDE.md` в vault
+3. **Скопировать шаблоны** — `assets/templates/` → `templates/` в vault
+4. **Настроить identity** — скопировать `assets/identity.md` → `identity.md` в корень vault, заполнить имя и роль
+5. **Первый ingest** — "ingest [название источника] в мой wiki"
+6. **Первый session-summary** — в конце сессии `/session-summary` → создаёт Drawer → `/compile` → обновляет Wings
 
 ---
 
-## File Structure
+## Структура файлов скила
 
 ```
 obsidian-memory/
-├── SKILL.md                     # Main skill — trigger + all operations
+├── SKILL.md                     # Главный файл скила — триггеры + все операции
 ├── references/
-│   ├── wiki-schema.md           # Full wiki schema: page types, frontmatter, tags, workflows
-│   ├── memory-schema.md         # Memory layer: file types, load order, routing, principles
-│   └── setup.md                 # Step-by-step installation guide
+│   ├── wiki-schema.md           # Полная схема wiki: типы страниц, frontmatter, теги, workflows
+│   ├── memory-schema.md         # Memory layer: типы файлов, порядок загрузки, routing
+│   └── setup.md                 # Пошаговая инструкция установки
 └── assets/
-    ├── vault-CLAUDE.md          # Drop-in schema for wiki/CLAUDE.md
-    ├── vault-index.md           # Template for wiki/index.md (with Wings + Drawers sections)
-    ├── vault-log.md             # Template for wiki/log.md
-    ├── identity.md              # Template for vault root identity.md (L0 context)
+    ├── vault-CLAUDE.md          # Drop-in схема для wiki/CLAUDE.md
+    ├── vault-index.md           # Шаблон wiki/index.md (с секциями Wings + Drawers)
+    ├── vault-log.md             # Шаблон wiki/log.md
+    ├── identity.md              # Шаблон identity.md (L0 контекст)
     └── templates/
-        ├── wiki-summary.md      # Source digest template
-        ├── wiki-entity.md       # Person/company/tool template
-        ├── wiki-concept.md      # Methodology/framework template
-        ├── wiki-synthesis.md    # Cross-source analysis template
-        ├── wiki-domain.md       # Map of Content template
-        ├── wing-person.md       # Person wing — 5 halls (Facts/Events/Discoveries/Preferences/Advice)
-        ├── wing-project.md      # Project wing — 5 halls (Facts/Events/Discoveries/Preferences/Decisions)
-        └── drawer.md            # Immutable session log template
+        ├── wiki-summary.md      # Конспект источника
+        ├── wiki-entity.md       # Человек/компания/инструмент
+        ├── wiki-concept.md      # Методология/фреймворк
+        ├── wiki-synthesis.md    # Кросс-источниковый анализ
+        ├── wiki-domain.md       # Map of Content
+        ├── wing-person.md       # Wing человека — 5 залов
+        ├── wing-project.md      # Wing проекта — 5 залов
+        └── drawer.md            # Неизменяемый лог сессии
 ```
 
 ---
 
-## Operations
+## Операции
 
-| Command | When to use |
-|---------|-------------|
-| SETUP | First-time vault initialization |
-| INGEST | Add a source to the wiki |
-| QUERY | Search and synthesize knowledge |
-| LINT | Weekly health check (wiki + Palace checks) |
-| MEMORY | Load agent context at session start |
-| COMPILE | After each session — process drawers into wings |
-| WING | Create a person or project wing profile |
+| Операция | Когда использовать |
+|----------|-------------------|
+| SETUP | Первичная инициализация vault |
+| INGEST | Добавить источник в wiki |
+| QUERY | Поиск и синтез знаний (сначала graph query, потом grep) |
+| LINT | Еженедельная проверка (wiki + Palace) |
+| GRAPH | Регенерация knowledge graph после bulk ingest |
+| MEMORY | Загрузка контекста агента в начале сессии |
+| COMPILE | После сессии — обработать Drawers в Wings |
+| WING | Создать Wing человека или проекта |
 
 ---
 
-## Vault Structure
-
-After setup, your vault will have:
+## Структура vault после настройки
 
 ```
 vault/
-├── identity.md          ← L0 context, loaded every session (~100 tokens)
+├── identity.md             ← L0 контекст, каждая сессия (~100 токенов)
+├── AGENTS.md               ← entry point для второго агента (опционально)
 ├── wiki/
-│   ├── CLAUDE.md        ← schema (from assets/vault-CLAUDE.md)
-│   ├── index.md         ← catalog of all pages
-│   ├── log.md           ← operation log
-│   ├── summaries/       ← one file per source ingested
-│   ├── entities/        ← people, companies, tools (what they ARE)
-│   ├── concepts/        ← frameworks, methodologies
-│   ├── synthesis/       ← cross-source analysis
-│   ├── domains/         ← thematic hubs (Maps of Content)
-│   ├── wings/           ← Robby Palace: per-person and per-project profiles
-│   │   ├── person-{slug}.md   ← 5 halls: Facts / Events / Discoveries / Preferences / Advice
-│   │   └── project-{slug}.md  ← 5 halls: Facts / Events / Discoveries / Preferences / Decisions
-│   └── drawers/         ← immutable session logs (compiled: true/false)
-│       └── drawer-YYYY-MM-DD-{slug}.md
-├── output/              ← regeneratable artifacts (dashboards, reports)
+│   ├── CLAUDE.md           ← схема (из assets/vault-CLAUDE.md)
+│   ├── index.md            ← каталог всех страниц
+│   ├── log.md              ← лог операций
+│   ├── summaries/          ← один файл на источник
+│   ├── entities/           ← люди, компании, инструменты (что это ЕСТЬ)
+│   ├── concepts/           ← фреймворки, методологии
+│   ├── synthesis/          ← кросс-источниковый анализ
+│   ├── domains/            ← тематические хабы (Maps of Content)
+│   ├── wings/              ← Robby Palace: профили людей и проектов
+│   │   ├── person-{slug}.md
+│   │   └── project-{slug}.md
+│   └── drawers/            ← неизменяемые логи сессий
+├── output/
 │   ├── dashboards/
 │   └── reports/
-├── memory/
+├── memory/                 ← одиночный агент
 │   ├── memory_active.md
 │   ├── memory_decisions.md
-│   ├── memory_projects.md
-│   ├── memory_tools.md
-│   ├── memory_corrections.md     ← self-improvement: logical/process errors
-│   ├── memory_improvements_backlog.md  ← improvement ideas (Active/Done)
-│   ├── memory_metrics.md         ← weekly snapshot
-│   ├── memory_heartbeat.md       ← daily self-check log (cron 10:00)
-│   └── projects/{name}/
+│   ├── memory_corrections.md
+│   ├── memory_improvements_backlog.md
+│   ├── memory_metrics.md
+│   ├── memory_heartbeat.md
+│   └── graph/              ← graphify knowledge graph
+│       ├── extract_vault.py
+│       └── graphify-out/
+│           ├── graph.json        (git-ignored)
+│           ├── GRAPH_REPORT.md
+│           └── missing-links.md
 └── raw-sources/
     ├── pdfs/
     ├── articles/
     └── converted/
 ```
 
+**Мультиагентный вариант** — вместо единого `memory/` используется:
+```
+12-shared/    ← memory_decisions, memory_projects, memory_tools, graph/
+12-claude/    ← memory_active, memory_corrections, memory_heartbeat, ...
+12-codex/     ← то же, отдельно
+```
+
 ---
 
-## Key Principles
+## Ключевые принципы
 
-1. **Writes required** — any session that reads must write something back
-2. **Corrections > rules** — 151 concrete edits beat 39K chars of abstract instructions
-3. **Separation** — wiki = knowledge, memory = operational context, never duplicate
-4. **Quality > quantity** — 5 well-linked pages beat 20 isolated ones
-5. **Compound context** — every session makes the next one faster
-6. **Self-improvement loop** — log errors in `memory_corrections.md`, run daily HEARTBEAT to detect patterns, ship fixes into skills
-7. **Drawers are immutable** — session logs are never edited after creation; they are source of truth for the past
-8. **Entity vs Wing** — entity = what something IS; wing = your relationship with it. Don't duplicate
-9. **Compile loop** — every significant session: create drawer → COMPILE → wings updated
+1. **Writes required** — каждая сессия, которая читает, должна что-то записать
+2. **Separation** — wiki = знания, memory = оперативный контекст, никогда не дублировать
+3. **Quality > quantity** — 5 связанных страниц лучше 20 изолированных
+4. **Compound context** — каждая сессия делает следующую быстрее
+5. **Corrections > rules** — конкретные логи ошибок сильнее абстрактных инструкций
+6. **Drawers immutable** — логи сессий не редактируются после создания
+7. **Entity vs Wing** — entity = что это ЕСТЬ; wing = ваши отношения с этим
+8. **Graph before grep** — при QUERY сначала `query_graph`, потом файловый поиск
+9. **Private isolation** — в мультиагентном сетапе ошибки и heartbeat каждого агента хранятся отдельно
+
+---
 
 ## Self-Improvement Loop
 
-The memory layer includes a 4-file self-improvement system:
+Четыре файла, которые работают вместе:
 
-| File | Purpose | Who writes |
-|------|---------|-----------|
-| `memory_corrections.md` | Logical/process errors (NOT style/tone) | User correction + session-summary |
-| `memory_improvements_backlog.md` | Improvement ideas (Active/Done) | HEARTBEAT + session-summary |
-| `memory_metrics.md` | Weekly snapshot (errors, improvements shipped) | HEARTBEAT every Sunday |
-| `memory_heartbeat.md` | Daily self-check log | HEARTBEAT cron at 10:00 local time |
+| Файл | Назначение | Кто пишет |
+|------|-----------|-----------|
+| `memory_corrections.md` | Логические/процессные ошибки (не стиль) | Правки пользователя + session-summary |
+| `memory_improvements_backlog.md` | Идеи улучшений (Active/Done) | HEARTBEAT + session-summary |
+| `memory_metrics.md` | Еженедельный снапшот | HEARTBEAT каждое воскресенье |
+| `memory_heartbeat.md` | Ежедневный self-check лог | HEARTBEAT cron в 10:00 |
 
-**Distinct from style corrections:** `memory_corrections.md` captures *what the agent did wrong procedurally* (skipped a step, missed a file). Style and tone edits belong in a separate `voice-corrections.md` (see `references/memory-schema.md` principle #2).
+**Уровни эскалации:** `memory_corrections.md` (открытая ошибка) → при `repeat_count >= 2` → `memory_decisions.md` (дурное правило) → при следующем agent-introspection → `CLAUDE.md` (часть identity агента).
 
-**HEARTBEAT cron:** create via `mcp__scheduled-tasks__create_scheduled_task` with `cronExpression: "0 10 * * *"`. The cron reads corrections, detects repeating patterns (2+ same root cause), flags stale backlog items, and prepends a daily entry.
-
----
-
-## Requirements
-
-- Claude Code with skills support
-- Obsidian with Dataview + Templater plugins
-- Optional: obsidian-git (for multi-device sync), @bitbonsai/mcpvault (for MCP access)
+**HEARTBEAT cron:** создаётся через `mcp__scheduled-tasks__create_scheduled_task` с `cronExpression: "0 10 * * *"`. Читает corrections, выявляет повторяющиеся паттерны (2+ одинаковых root cause), флагирует застойные backlog items.
 
 ---
 
-Built from production use. Inspired by Tobi Lutke/Karpathy LLM Wiki pattern, MemPalace (Milla Jovovich), and witcheer's ALIVE memory system.
+## Graphify Knowledge Graph
+
+Опциональный слой, который добавляет semantic search поверх wiki:
+
+```bash
+# Установка
+pip install graphifyy
+
+# Регенерация графа
+cd memory/graph && python extract_vault.py
+
+# Добавить MCP-сервер в ~/.claude.json
+{
+  "mcpServers": {
+    "graphify": {
+      "command": "python",
+      "args": ["-m", "graphify.serve", "memory/graph/graphify-out/graph.json"],
+      "type": "stdio"
+    }
+  }
+}
+```
+
+После этого агент может использовать `mcp__graphify__query_graph` для семантических запросов к графу перед тем как делать grep по файлам.
+
+---
+
+## Требования
+
+- Claude Code со поддержкой скилов
+- Obsidian с плагинами Dataview + Templater
+- Опционально: obsidian-git (синхронизация между устройствами), mcpvault (MCP доступ к vault), graphify (knowledge graph)
+
+---
+
+Создан из production-использования. Вдохновлён LLM Wiki pattern (Tobi Lutke / Karpathy), MemPalace (Milla Jovovich) и ALIVE memory system (witcheer).
