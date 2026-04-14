@@ -75,6 +75,7 @@ vault/
 | **INGEST** | New source to process | Read source → create summary → extract entities/concepts |
 | **QUERY** | Need knowledge from wiki | Read index.md → grep → synthesize → optionally save synthesis |
 | **LINT** | Weekly or before major work | Check links, orphans, frontmatter, index drift + Palace checks |
+| **GRAPH** | After bulk ingests (5+ pages) | `python memory/graph/extract_vault.py` |
 | **MEMORY** | Start of any work session | Load memory files in correct order before working |
 | **COMPILE** | After each session | Process uncompiled drawers → update wings |
 | **WING** | When creating a person/project profile | `/wing person Name` or `/wing project Name` |
@@ -118,13 +119,25 @@ vault/
 
 ### QUERY — Searching the wiki
 
+**Step 0 — Graph query (if graphify MCP is available):**
+Before touching files, call `mcp__graphify__query_graph` with the question as natural language.
+- Results include EXTRACTED nodes → use their `source_file` paths as starting points for step 3
+- Results are empty or confidence weak → skip to step 1 as normal
+
 1. Read `wiki/CLAUDE.md` to orient (if not already in context)
 2. Read `wiki/index.md` to navigate
-3. Search relevant pages (grep across `wiki/`)
+3. Search relevant pages (grep across `wiki/`, or follow `source_file` hints from graph query)
 4. Read the found pages
 5. Synthesize an answer using `[[wikilinks]]` to reference sources
 6. If the synthesis is valuable (cross-source insight) → save as `wiki/synthesis/synthesis-{topic}.md`
 7. Append QUERY entry to `wiki/log.md`
+
+**Graphify MCP tools (if installed):**
+- `mcp__graphify__query_graph` — semantic BFS/DFS traversal by question (use first)
+- `mcp__graphify__shortest_path` — path between two concepts
+- `mcp__graphify__get_neighbors` — all connections of a concept
+- `mcp__graphify__god_nodes` — most connected nodes (core abstractions)
+- `mcp__graphify__graph_stats` — corpus overview
 
 ### LINT — Health check
 
@@ -141,20 +154,33 @@ Write a LINT entry to `wiki/log.md` with findings and actions taken.
 
 ### MEMORY — Loading agent context
 
+**Step 0 — Determine agent_id (multi-agent setups only):**
+If running multiple agents from the same vault, each agent has its own private memory root.
+Read your entry-point file (`CLAUDE.md` or `AGENTS.md`) to find:
+- `agent_id` — who you are (e.g. `claude`, `codex`)
+- `private` — your private memory dir (e.g. `memory/` for single-agent, `12-claude/` for multi-agent)
+- `shared` — world-level facts dir (e.g. `12-shared/` in multi-agent setups)
+
+For single-agent setups: skip this step, use `memory/` for everything.
+
 Load in this order at the start of a session:
 0. `identity.md` — L0 context, ALWAYS first (~100 tokens)
-1. `memory/memory_active.md` — L1 critical, ALWAYS (current focus, blockers)
-2. `memory/memory_decisions.md` — L1 critical, ALWAYS (global conventions)
-3. `memory/memory_corrections.md` — BEFORE non-trivial tasks, last 5 entries (avoid repeating past mistakes)
+1. `{private}/memory_active.md` — L1 critical, ALWAYS (current focus, blockers)
+2. `{shared}/memory_decisions.md` — L1 critical, ALWAYS (global conventions)
+3. `{private}/memory_corrections.md` — BEFORE non-trivial tasks, last 5 entries (avoid repeating past mistakes)
 4. Domain memory based on session context (see `references/memory-schema.md`)
 5. Project-specific files if working on a specific project
 6. `wiki/wings/{relevant}.md` — L2: load if working with a specific person or project
 7. Maximum 2 additional related domain files
 
 **Self-improvement loop files** (read on demand, not always):
-- `memory/memory_improvements_backlog.md` — when reflecting on agent quality, planning improvements
-- `memory/memory_heartbeat.md` — last entry, when checking systemic patterns
-- `memory/memory_metrics.md` — when reviewing weekly performance
+- `{private}/memory_improvements_backlog.md` — when reflecting on agent quality, planning improvements
+- `{private}/memory_heartbeat.md` — last entry, when checking systemic patterns
+- `{private}/memory_metrics.md` — when reviewing weekly performance
+
+**Write rules:**
+- Private operational files (`memory_active`, `memory_corrections`, etc.) → write to your `{private}` path only.
+- World-level facts (`memory_decisions`, `memory_projects`, etc.) → in multi-agent setups, append-only to `{shared}` with source attribution.
 
 ### COMPILE — Compiling session drawers into wings
 
