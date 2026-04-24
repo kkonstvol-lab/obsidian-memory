@@ -39,6 +39,49 @@ type: memory-active
 
 ---
 
+### memory_in_progress.md — Active Work State
+**Load order: after `memory_active.md`, when available**
+
+The "what is actively being worked on" file. Use it for tasks, current repos, blockers, and next actions that should survive across sessions.
+
+Single-agent path: `memory/memory_in_progress.md`.
+
+Multi-agent path: `{private}/memory_in_progress.md`, for example `12-codex/memory_in_progress.md` or `12-claude/memory_in_progress.md`.
+
+```markdown
+---
+agent: codex
+type: memory-in-progress
+updated: YYYY-MM-DD
+---
+
+# Memory In Progress — Codex
+
+## Active Tasks
+
+### TASK-ID — short title
+- repo:
+- branch:
+- status:
+- context:
+- next_action:
+- last_update:
+- source:
+- link:
+
+## Current Repos
+
+## Blocked
+
+## Next Actions
+
+## Recently Done
+```
+
+**Rule:** Keep this operational, not archival. Completed work should move to `Recently Done`, `memory_projects.md`, or a session drawer.
+
+---
+
 ### memory_decisions.md — Global Conventions
 **Load order: #2, always**
 
@@ -185,12 +228,13 @@ At the start of any agent session, load memory files in this order:
 ```
 0) identity.md               ← L0 context — ALWAYS first (~100 tokens, vault root)
 1) memory_active.md          ← ALWAYS (current focus, blockers)
-2) memory_decisions.md       ← ALWAYS (global conventions)
-3) memory_corrections.md     ← BEFORE non-trivial tasks (last 5 entries)
-4) domain memory by context  ← route by session keywords (see Routing)
-5) project-specific files    ← if working on a specific project
-6) max 2 related domains     ← by trigger keywords
-7) wiki/wings/relevant-*.md  ← L2: if working with a specific person or project
+2) memory_in_progress.md     ← if available (active tasks and next actions)
+3) memory_decisions.md       ← ALWAYS (global conventions)
+4) memory_corrections.md     ← BEFORE non-trivial tasks (last 5 entries)
+5) domain memory by context  ← route by session keywords (see Routing)
+6) project-specific files    ← if working on a specific project
+7) max 2 related domains     ← by trigger keywords
+8) wiki/wings/relevant-*.md  ← L2: if working with a specific person or project
 ```
 
 **4-layer context loading model:**
@@ -198,7 +242,7 @@ At the start of any agent session, load memory files in this order:
 | Layer | Size | Files | When |
 |-------|------|-------|------|
 | L0 Identity | ~100 tokens | `identity.md` (vault root) | Every session |
-| L1 Critical | ~500 tokens | `memory_active.md` + `memory_decisions.md` | Every session |
+| L1 Critical | ~500-1000 tokens | `memory_active.md` + `memory_in_progress.md` + `memory_decisions.md` | Every session |
 | L2 Wings | ~200 tokens each | `wiki/wings/person-*.md`, `project-*.md` | On-demand by context |
 | L3 Deep | unlimited | `wiki/drawers/*`, `raw-sources/*` | Explicit search |
 

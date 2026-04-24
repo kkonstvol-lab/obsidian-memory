@@ -1,6 +1,6 @@
 ---
 name: obsidian-memory
-description: "Создаёт и поддерживает систему постоянной памяти для AI-агентов на базе Obsidian. Скил объединяет три взаимосвязанные системы: (1) LLM Wiki — курируемая база знаний из конспектов, сущностей и концептов, извлечённых из книг, статей и PDF, связанных wikilinks и Maps of Content; (2) Robby Palace — слой Wings (профили людей и проектов) и Drawers (неизменяемые логи сессий), которые компилируют накопленный опыт в структурированный контекст; (3) Self-Improvement Loop — приватная оперативная память каждого агента (текущий фокус, ошибки, бэклог, heartbeat, метрики), которая учится на своих ошибках без смешивания контекстов. Поверх всех трёх систем работает Graphify knowledge graph — автоматически находит семантические связи между страницами через Leiden-кластеризацию и предоставляет их через MCP tools, поэтому агенты делают graph query перед grep. Поддерживает мультиагентные сетапы (Claude Code + Codex): мировые факты общие, оперативная память полностью изолирована по агентам. Операции: SETUP, INGEST, QUERY, LINT, GRAPH, MEMORY, COMPILE, WING. Triggers: 'ingest', 'add to wiki', 'query wiki', 'lint wiki', 'obsidian memory', 'obsidian wiki', '/obsidian-memory', 'llm wiki', 'knowledge base', 'wiki setup', 'compile', 'create wing', 'person profile', 'project profile', 'knowledge graph', 'graphify'."
+description: "Создаёт и поддерживает систему постоянной памяти для AI-агентов на базе Obsidian. Скил объединяет три взаимосвязанные системы: (1) LLM Wiki — курируемая база знаний из конспектов, сущностей и концептов, извлечённых из книг, статей и PDF, связанных wikilinks и Maps of Content; (2) Robby Palace — слой Wings (профили людей и проектов) и Drawers (неизменяемые логи сессий), которые компилируют накопленный опыт в структурированный контекст; (3) Self-Improvement Loop — приватная оперативная память каждого агента (текущий фокус, ошибки, in-progress задачи, бэклог, heartbeat, метрики), которая учится на своих ошибках без смешивания контекстов. Поверх всех трёх систем работает Graphify knowledge graph — автоматически находит семантические связи между страницами через Leiden-кластеризацию и предоставляет их через MCP tools, поэтому агенты делают graph query перед grep. Поддерживает мультиагентные сетапы (Claude Code + Codex): мировые факты общие, оперативная память полностью изолирована по агентам. Операции: SETUP, INGEST, QUERY, LINT, GRAPH, MEMORY, CODEX-HOOKS, COMPILE, WING. Triggers: 'ingest', 'add to wiki', 'query wiki', 'lint wiki', 'obsidian memory', 'obsidian wiki', '/obsidian-memory', 'llm wiki', 'knowledge base', 'wiki setup', 'codex hooks', 'codex memory hooks', 'compile', 'create wing', 'person profile', 'project profile', 'knowledge graph', 'graphify'."
 ---
 
 # Obsidian Memory — LLM Wiki + Agent Memory System
@@ -32,6 +32,7 @@ vault/
 │       └── drawer-YYYY-MM-DD-{slug}.md
 ├── memory/               # Agent operational context (Claude manages)
 │   ├── memory_active.md  # Current focus — max 15 lines, always load first
+│   ├── memory_in_progress.md  # Active tasks, repos, blockers, next actions
 │   ├── memory_decisions.md  # Global conventions and decisions
 │   ├── memory_projects.md   # Project registry
 │   ├── memory_tools.md      # Tools, plugins, MCP servers
@@ -77,6 +78,7 @@ vault/
 | **LINT** | Weekly or before major work | Check links, orphans, frontmatter, index drift + Palace checks |
 | **GRAPH** | After bulk ingests (5+ pages) | `python memory/graph/extract_vault.py` |
 | **MEMORY** | Start of any work session | Load memory files in correct order before working |
+| **CODEX-HOOKS** | Optional Codex automation | Install Codex lifecycle hooks that load Obsidian memory |
 | **COMPILE** | After each session | Process uncompiled drawers → update wings |
 | **WING** | When creating a person/project profile | `/wing person Name` or `/wing project Name` |
 
@@ -166,12 +168,13 @@ For single-agent setups: skip this step, use `memory/` for everything.
 Load in this order at the start of a session:
 0. `identity.md` — L0 context, ALWAYS first (~100 tokens)
 1. `{private}/memory_active.md` — L1 critical, ALWAYS (current focus, blockers)
-2. `{shared}/memory_decisions.md` — L1 critical, ALWAYS (global conventions)
-3. `{private}/memory_corrections.md` — BEFORE non-trivial tasks, last 5 entries (avoid repeating past mistakes)
-4. Domain memory based on session context (see `references/memory-schema.md`)
-5. Project-specific files if working on a specific project
-6. `wiki/wings/{relevant}.md` — L2: load if working with a specific person or project
-7. Maximum 2 additional related domain files
+2. `{private}/memory_in_progress.md` — if available (active tasks and next actions)
+3. `{shared}/memory_decisions.md` — L1 critical, ALWAYS (global conventions)
+4. `{private}/memory_corrections.md` — BEFORE non-trivial tasks, last 5 entries (avoid repeating past mistakes)
+5. Domain memory based on session context (see `references/memory-schema.md`)
+6. Project-specific files if working on a specific project
+7. `wiki/wings/{relevant}.md` — L2: load if working with a specific person or project
+8. Maximum 2 additional related domain files
 
 **Self-improvement loop files** (read on demand, not always):
 - `{private}/memory_improvements_backlog.md` — when reflecting on agent quality, planning improvements
@@ -181,6 +184,20 @@ Load in this order at the start of a session:
 **Write rules:**
 - Private operational files (`memory_active`, `memory_corrections`, etc.) → write to your `{private}` path only.
 - World-level facts (`memory_decisions`, `memory_projects`, etc.) → in multi-agent setups, append-only to `{shared}` with source attribution.
+
+### CODEX-HOOKS — Optional Codex lifecycle automation
+
+Use this operation when the user wants Codex to load Obsidian memory automatically at session startup and remind itself to update memory after publishing work.
+
+1. Read `references/codex-hooks.md` first.
+2. Copy `assets/codex/hooks/codex-session-start.js` and `assets/codex/hooks/codex-post-tool-use.js` into `~/.codex/hooks/`.
+3. Copy `assets/codex/hooks/hooks.json.template` to `~/.codex/hooks.json`.
+4. Configure the vault path with `OBSIDIAN_VAULT_PATH` or `~/.codex/obsidian-memory.json`.
+5. Copy `assets/codex/memory_in_progress.md` into the agent private memory root if it does not exist.
+6. Enable `[features].codex_hooks = true` only after confirming the local Codex runtime supports hooks.
+7. Run the manual smoke tests from `references/codex-hooks.md`.
+
+**Do not depend on GitHub Issues.** Store active work state in Obsidian memory. Links to GitHub, Linear, or Obsidian notes are optional task metadata.
 
 ### COMPILE — Compiling session drawers into wings
 
@@ -237,6 +254,7 @@ Usage: `/wing person John Smith` or `/wing project Acme Redesign`
 
 - `references/wiki-schema.md` — Full wiki layer schema: page types, frontmatter, tag taxonomy, detailed operations
 - `references/memory-schema.md` — Memory layer: file types, load order, routing, key principles
+- `references/codex-hooks.md` — Optional Codex hooks that load Obsidian memory and remind after `git push`
 - `references/setup.md` — Step-by-step first-time setup guide (plugins, MCP, git sync)
 - `assets/vault-CLAUDE.md` — Drop-in schema file for `wiki/CLAUDE.md`
 - `assets/vault-index.md` — Template for `wiki/index.md` (includes Wings and Drawers sections)

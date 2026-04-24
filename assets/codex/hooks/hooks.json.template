@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.codex/hooks/codex-session-start.js\"",
+            "statusMessage": "Loading Obsidian memory context",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.codex/hooks/codex-post-tool-use.js\"",
+            "statusMessage": "Checking Obsidian memory reminder",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

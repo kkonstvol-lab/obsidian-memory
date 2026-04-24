@@ -81,6 +81,7 @@ Then create initial memory files:
 
 ```
 memory/memory_active.md
+memory/memory_in_progress.md (optional — active task state)
 memory/memory_decisions.md
 memory/memory_projects.md
 memory/memory_tools.md
@@ -146,6 +147,69 @@ On Windows, if `npx` is not in PATH, use the full path:
 ```
 "command": "C:\\path\\to\\node\\npx.cmd"
 ```
+
+---
+
+## Step 4b: Optional Codex Hooks
+
+Codex hooks can load Obsidian memory at session startup and remind the agent to update memory after `git push`.
+
+**Status:** Codex hooks are experimental. The official Codex hooks documentation currently says Windows support is temporarily disabled. Install the files as ready-to-use infrastructure, but do not claim live hook behavior on Windows until your Codex runtime confirms support.
+
+### Copy hook scripts
+
+Copy these files from the skill into your Codex config:
+
+```bash
+mkdir -p ~/.codex/hooks
+cp assets/codex/hooks/codex-session-start.js ~/.codex/hooks/
+cp assets/codex/hooks/codex-post-tool-use.js ~/.codex/hooks/
+cp assets/codex/hooks/hooks.json.template ~/.codex/hooks.json
+```
+
+### Configure vault path
+
+Use environment variables:
+
+```bash
+export OBSIDIAN_VAULT_PATH="/absolute/path/to/obsidian-vault"
+export OBSIDIAN_AGENT_ID="codex"
+```
+
+Or create `~/.codex/obsidian-memory.json`:
+
+```json
+{
+  "vaultPath": "/absolute/path/to/obsidian-vault",
+  "agentId": "codex"
+}
+```
+
+For multi-agent vaults, the hook looks for `12-{agentId}/` and `12-shared/`. For single-agent vaults, it falls back to `memory/`.
+
+### Enable Codex hooks when supported
+
+Add this to `~/.codex/config.toml` only after confirming your runtime supports hooks:
+
+```toml
+[features]
+codex_hooks = true
+```
+
+### Manual smoke tests
+
+```bash
+echo '{"source":"startup","cwd":"/path/to/repo","hook_event_name":"SessionStart"}' \
+  | node ~/.codex/hooks/codex-session-start.js
+
+echo '{"source":"resume","cwd":"/path/to/repo","hook_event_name":"SessionStart"}' \
+  | node ~/.codex/hooks/codex-session-start.js
+
+echo '{"tool_name":"Bash","tool_input":{"command":"git push origin main"},"cwd":"/path/to/repo","hook_event_name":"PostToolUse"}' \
+  | node ~/.codex/hooks/codex-post-tool-use.js
+```
+
+`startup` should print bounded Obsidian context. `resume` should stay silent. `git push` should print a JSON reminder to update Obsidian memory.
 
 ---
 

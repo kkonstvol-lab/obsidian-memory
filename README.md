@@ -1,6 +1,6 @@
 # obsidian-memory
 
-Скил для Claude Code — система постоянной памяти для AI-агентов на базе Obsidian. Объединяет LLM Wiki, Robby Palace, Self-Improvement Loop и Graphify knowledge graph в единый контур.
+Скил для Claude Code и Codex-style агентов — система постоянной памяти для AI-агентов на базе Obsidian. Объединяет LLM Wiki, Robby Palace, Self-Improvement Loop, optional Codex hooks и Graphify knowledge graph в единый контур.
 
 **Claude — программист. Obsidian — IDE. Wiki — кодовая база.**
 
@@ -26,6 +26,11 @@
 - Трекать идеи улучшений → внедрять в скилы
 - Ежедневный HEARTBEAT cron в 10:00 → читает corrections, поверхностно выявляет паттерны, остаётся калиброванным
 
+**Codex Hooks** (`assets/codex/hooks/`) — optional lifecycle-интеграция Codex с Obsidian:
+- `SessionStart` загружает bounded operational context из vault
+- `PostToolUse` после `git push` напоминает обновить `memory_in_progress.md`
+- Источник правды — Obsidian memory, не GitHub Issues
+
 **Graphify Knowledge Graph** (`memory/graph/`) — семантический слой поверх Wiki:
 - Автоматически извлекает связи между страницами через wikilinks → граф (NetworkX)
 - Leiden-кластеризация → тематические communities → кандидаты на новые MOC
@@ -48,6 +53,8 @@ vault/
 
 Каждый агент читает свой entry-point (`CLAUDE.md` или `AGENTS.md`), узнаёт `agent_id` и пути к своему `{private}` и общему `{shared}`. Self-Improvement Loop работает независимо для каждого — ошибки Codex не попадают в heartbeat Claude и наоборот.
 
+Codex может дополнительно использовать lifecycle hooks из `assets/codex/hooks/`, чтобы подтягивать свой `{private}/memory_in_progress.md` на старте новой сессии и получать напоминание обновить Obsidian memory после `git push`.
+
 Для одного агента: используй `memory/` как единый корень, мультиагентное разделение опционально.
 
 ---
@@ -59,6 +66,27 @@ git clone https://github.com/kkonstvol-lab/obsidian-memory ~/.claude/skills/obsi
 ```
 
 Перезапустить Claude Code. Скил доступен как `/obsidian-memory`.
+
+### Optional: Codex hooks
+
+Codex-интеграция устанавливается отдельно, потому что Codex hooks являются experimental:
+
+```bash
+mkdir -p ~/.codex/hooks
+cp assets/codex/hooks/codex-session-start.js ~/.codex/hooks/
+cp assets/codex/hooks/codex-post-tool-use.js ~/.codex/hooks/
+cp assets/codex/hooks/hooks.json.template ~/.codex/hooks.json
+cp assets/codex/memory_in_progress.md /path/to/obsidian-vault/12-codex/memory_in_progress.md
+```
+
+Задать vault path:
+
+```bash
+export OBSIDIAN_VAULT_PATH="/path/to/obsidian-vault"
+export OBSIDIAN_AGENT_ID="codex"
+```
+
+Подробнее: `references/codex-hooks.md`.
 
 ---
 
@@ -81,8 +109,16 @@ obsidian-memory/
 ├── references/
 │   ├── wiki-schema.md           # Полная схема wiki: типы страниц, frontmatter, теги, workflows
 │   ├── memory-schema.md         # Memory layer: типы файлов, порядок загрузки, routing
+│   ├── codex-hooks.md           # Optional Codex hooks для Obsidian memory
 │   └── setup.md                 # Пошаговая инструкция установки
 └── assets/
+    ├── codex/
+    │   ├── hooks/
+    │   │   ├── codex-session-start.js
+    │   │   ├── codex-post-tool-use.js
+    │   │   └── hooks.json.template
+    │   ├── memory_in_progress.md
+    │   └── env.example
     ├── vault-CLAUDE.md          # Drop-in схема для wiki/CLAUDE.md
     ├── vault-index.md           # Шаблон wiki/index.md (с секциями Wings + Drawers)
     ├── vault-log.md             # Шаблон wiki/log.md
@@ -110,6 +146,7 @@ obsidian-memory/
 | LINT | Еженедельная проверка (wiki + Palace) |
 | GRAPH | Регенерация knowledge graph после bulk ingest |
 | MEMORY | Загрузка контекста агента в начале сессии |
+| CODEX-HOOKS | Optional Codex lifecycle hooks для Obsidian memory |
 | COMPILE | После сессии — обработать Drawers в Wings |
 | WING | Создать Wing человека или проекта |
 
@@ -139,6 +176,7 @@ vault/
 │   └── reports/
 ├── memory/                 ← одиночный агент
 │   ├── memory_active.md
+│   ├── memory_in_progress.md
 │   ├── memory_decisions.md
 │   ├── memory_corrections.md
 │   ├── memory_improvements_backlog.md
@@ -159,7 +197,7 @@ vault/
 **Мультиагентный вариант** — вместо единого `memory/` используется:
 ```
 12-shared/    ← memory_decisions, memory_projects, memory_tools, graph/
-12-claude/    ← memory_active, memory_corrections, memory_heartbeat, ...
+12-claude/    ← memory_active, memory_in_progress, memory_corrections, memory_heartbeat, ...
 12-codex/     ← то же, отдельно
 ```
 
@@ -226,6 +264,7 @@ cd memory/graph && python extract_vault.py
 ## Требования
 
 - Claude Code со поддержкой скилов
+- Для Codex hooks: Codex runtime с включённой experimental hooks support; по официальной документации Windows support сейчас временно отключён
 - Obsidian с плагинами Dataview + Templater
 - Опционально: obsidian-git (синхронизация между устройствами), mcpvault (MCP доступ к vault), graphify (knowledge graph)
 
