@@ -34,8 +34,10 @@
 **Graphify Knowledge Graph** (`memory/graph/`) — семантический слой поверх Wiki:
 - Автоматически извлекает связи между страницами через wikilinks → граф (NetworkX)
 - Leiden-кластеризация → тематические communities → кандидаты на новые MOC
+- Beads-style очередь ревью `GRAPH_READY.md`: готовые действия, блокеры, решения человека
+- Устойчивые IDs для узлов, связей и предложений; `review-state.jsonl` для accepted/skipped/obsolete
 - MCP-сервер graphify → агенты делают `query_graph` перед grep
-- Выявляет неожиданные связи, которые ручными wikilinks не добавляются
+- Скрипты не редактируют `wiki/` и `raw-sources/`, только генерируют отчёты
 
 ---
 
@@ -109,9 +111,15 @@ obsidian-memory/
 ├── references/
 │   ├── wiki-schema.md           # Полная схема wiki: типы страниц, frontmatter, теги, workflows
 │   ├── memory-schema.md         # Memory layer: типы файлов, порядок загрузки, routing
+│   ├── graphify.md              # Graphify + Beads-style review queue
 │   ├── codex-hooks.md           # Optional Codex hooks для Obsidian memory
 │   └── setup.md                 # Пошаговая инструкция установки
 └── assets/
+    ├── graph/
+    │   ├── extract_vault.py
+    │   ├── suggest_wikilinks.py
+    │   ├── review-state.jsonl
+    │   └── tests/
     ├── codex/
     │   ├── hooks/
     │   │   ├── codex-session-start.js
@@ -184,9 +192,13 @@ vault/
 │   ├── memory_heartbeat.md
 │   └── graph/              ← graphify knowledge graph
 │       ├── extract_vault.py
+│       ├── suggest_wikilinks.py
+│       ├── review-state.jsonl
+│       ├── tests/
 │       └── graphify-out/
 │           ├── graph.json        (git-ignored)
 │           ├── GRAPH_REPORT.md
+│           ├── GRAPH_READY.md
 │           └── missing-links.md
 └── raw-sources/
     ├── pdfs/
@@ -242,8 +254,16 @@ vault/
 # Установка
 pip install graphifyy
 
+# Скопировать bundled graph layer
+cp -R assets/graph/* /path/to/vault/memory/graph/
+
 # Регенерация графа
-cd memory/graph && python extract_vault.py
+cd /path/to/vault/memory/graph
+python extract_vault.py
+python suggest_wikilinks.py
+
+# Проверка
+python tests/test_graphify_beads.py
 
 # Добавить MCP-сервер в ~/.claude.json
 {
@@ -258,6 +278,8 @@ cd memory/graph && python extract_vault.py
 ```
 
 После этого агент может использовать `mcp__graphify__query_graph` для семантических запросов к графу перед тем как делать grep по файлам.
+
+`GRAPH_READY.md` — это очередь человеческого ревью. Принятые/отклонённые решения фиксируются в `review-state.jsonl`, а не ручной правкой generated reports. Подробнее: `references/graphify.md`.
 
 ---
 

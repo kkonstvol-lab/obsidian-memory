@@ -6,6 +6,27 @@ The `memory/` layer is the agent's operational brain — what it knows about the
 
 ---
 
+## Graph Layer
+
+The graph layer is derived from `wiki/` and `raw-sources/`; it is not canonical memory.
+
+Paths:
+
+- Single-agent: `memory/graph/`
+- Multi-agent: `12-shared/graph/`
+
+Install by copying `assets/graph/` from this skill into the graph path. See `references/graphify.md` for the full workflow.
+
+Key files:
+
+- `extract_vault.py` — creates typed graph metadata and `graphify-out/graph.json`.
+- `suggest_wikilinks.py` — creates `GRAPH_READY.md` and `missing-links.md`.
+- `review-state.jsonl` — append-only review state for `accepted`, `skipped`, and `obsolete` actions.
+
+Rule: graph scripts must never edit `wiki/` or `raw-sources/`; they only generate reports.
+
+---
+
 ## File Types
 
 ### memory_active.md — Current Focus

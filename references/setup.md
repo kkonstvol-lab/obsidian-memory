@@ -43,7 +43,8 @@ vault/
 │   ├── wings/          ← Robby Palace: person and project profiles
 │   └── drawers/        ← Robby Palace: immutable session logs
 ├── memory/
-│   └── projects/
+│   ├── projects/
+│   └── graph/
 ├── output/             ← Regeneratable artifacts (dashboards, reports)
 │   ├── dashboards/
 │   └── reports/
@@ -74,6 +75,7 @@ Copy from this skill's `assets/` folder to your vault:
 | `templates/wing-person.md` | `templates/wing-person.md` | Person wing — 5 halls |
 | `templates/wing-project.md` | `templates/wing-project.md` | Project wing — 5 halls |
 | `templates/drawer.md` | `templates/drawer.md` | Immutable session log template |
+| `graph/` | `memory/graph/` or `12-shared/graph/` | Graphify scripts, review queue, fixture tests |
 
 **After copying `identity.md`:** Open it and fill in your name, role, primary language, and any site-specific rules you always want Claude to follow. Keep it under 150 words — it's loaded every session.
 
@@ -90,6 +92,39 @@ memory/memory_repos.md      (optional — for engineering work)
 ```
 
 Use the file type templates from `references/memory-schema.md` as starting content.
+
+For the graph layer, copy `assets/graph/` into the graph folder and read `references/graphify.md`.
+
+---
+
+## Step 3b: Graphify Knowledge Graph
+
+Install graphify if you want MCP graph search:
+
+```bash
+pip install graphifyy
+```
+
+Copy the bundled graph layer:
+
+```bash
+# Single-agent vault
+cp -R assets/graph/* {YOUR_VAULT_PATH}/memory/graph/
+
+# Multi-agent vault
+cp -R assets/graph/* {YOUR_VAULT_PATH}/12-shared/graph/
+```
+
+Regenerate:
+
+```bash
+cd {YOUR_VAULT_PATH}/memory/graph
+python extract_vault.py
+python suggest_wikilinks.py
+python tests/test_graphify_beads.py
+```
+
+Review `graphify-out/GRAPH_READY.md` before editing wiki pages. Record accepted/skipped/obsolete decisions in `review-state.jsonl`.
 
 ---
 

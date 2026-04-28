@@ -1,6 +1,6 @@
 ---
 name: obsidian-memory
-description: "Создаёт и поддерживает систему постоянной памяти для AI-агентов на базе Obsidian. Скил объединяет три взаимосвязанные системы: (1) LLM Wiki — курируемая база знаний из конспектов, сущностей и концептов, извлечённых из книг, статей и PDF, связанных wikilinks и Maps of Content; (2) Robby Palace — слой Wings (профили людей и проектов) и Drawers (неизменяемые логи сессий), которые компилируют накопленный опыт в структурированный контекст; (3) Self-Improvement Loop — приватная оперативная память каждого агента (текущий фокус, ошибки, in-progress задачи, бэклог, heartbeat, метрики), которая учится на своих ошибках без смешивания контекстов. Поверх всех трёх систем работает Graphify knowledge graph — автоматически находит семантические связи между страницами через Leiden-кластеризацию и предоставляет их через MCP tools, поэтому агенты делают graph query перед grep. Поддерживает мультиагентные сетапы (Claude Code + Codex): мировые факты общие, оперативная память полностью изолирована по агентам. Операции: SETUP, INGEST, QUERY, LINT, GRAPH, MEMORY, CODEX-HOOKS, COMPILE, WING. Triggers: 'ingest', 'add to wiki', 'query wiki', 'lint wiki', 'obsidian memory', 'obsidian wiki', '/obsidian-memory', 'llm wiki', 'knowledge base', 'wiki setup', 'codex hooks', 'codex memory hooks', 'compile', 'create wing', 'person profile', 'project profile', 'knowledge graph', 'graphify'."
+description: "Создаёт и поддерживает систему постоянной памяти для AI-агентов на базе Obsidian. Скил объединяет три взаимосвязанные системы: (1) LLM Wiki — курируемая база знаний из конспектов, сущностей и концептов, извлечённых из книг, статей и PDF, связанных wikilinks и Maps of Content; (2) Robby Palace — слой Wings (профили людей и проектов) и Drawers (неизменяемые логи сессий), которые компилируют накопленный опыт в структурированный контекст; (3) Self-Improvement Loop — приватная оперативная память каждого агента (текущий фокус, ошибки, in-progress задачи, бэклог, heartbeat, метрики), которая учится на своих ошибках без смешивания контекстов. Поверх всех трёх систем работает Graphify knowledge graph — автоматически находит связи между страницами, строит Leiden communities, генерирует Beads-style очередь ревью `GRAPH_READY.md` и предоставляет граф через MCP tools, поэтому агенты делают graph query перед grep. Поддерживает мультиагентные сетапы (Claude Code + Codex): мировые факты общие, оперативная память полностью изолирована по агентам. Операции: SETUP, INGEST, QUERY, LINT, GRAPH, MEMORY, CODEX-HOOKS, COMPILE, WING. Triggers: 'ingest', 'add to wiki', 'query wiki', 'lint wiki', 'obsidian memory', 'obsidian wiki', '/obsidian-memory', 'llm wiki', 'knowledge base', 'wiki setup', 'codex hooks', 'codex memory hooks', 'compile', 'create wing', 'person profile', 'project profile', 'knowledge graph', 'graphify', 'graph ready', 'missing links'."
 ---
 
 # Obsidian Memory — LLM Wiki + Agent Memory System
@@ -76,7 +76,7 @@ vault/
 | **INGEST** | New source to process | Read source → create summary → extract entities/concepts |
 | **QUERY** | Need knowledge from wiki | Read index.md → grep → synthesize → optionally save synthesis |
 | **LINT** | Weekly or before major work | Check links, orphans, frontmatter, index drift + Palace checks |
-| **GRAPH** | After bulk ingests (5+ pages) | `python memory/graph/extract_vault.py` |
+| **GRAPH** | After bulk ingests (5+ pages) | Regenerate graph + review queue |
 | **MEMORY** | Start of any work session | Load memory files in correct order before working |
 | **CODEX-HOOKS** | Optional Codex automation | Install Codex lifecycle hooks that load Obsidian memory |
 | **COMPILE** | After each session | Process uncompiled drawers → update wings |
@@ -153,6 +153,18 @@ Check and report:
 7. **Duplicate entities** — two files about the same entity
 
 Write a LINT entry to `wiki/log.md` with findings and actions taken.
+
+### GRAPH — Regenerating the knowledge graph
+
+1. Read `references/graphify.md` first.
+2. If graph files are not installed, copy `assets/graph/` into:
+   - single-agent: `memory/graph/`
+   - multi-agent: `12-shared/graph/`
+3. Run `python extract_vault.py`, then `python suggest_wikilinks.py` from the graph folder.
+4. Review `graphify-out/GRAPH_READY.md` before editing any wiki pages.
+5. Use `review-state.jsonl` for accepted/skipped/obsolete actions. Do not manually edit generated reports as source of truth.
+6. Never let graph scripts modify `wiki/` or `raw-sources/`; they only generate reports.
+7. For validation, run `python tests/test_graphify_beads.py`.
 
 ### MEMORY — Loading agent context
 
@@ -254,6 +266,7 @@ Usage: `/wing person John Smith` or `/wing project Acme Redesign`
 
 - `references/wiki-schema.md` — Full wiki layer schema: page types, frontmatter, tag taxonomy, detailed operations
 - `references/memory-schema.md` — Memory layer: file types, load order, routing, key principles
+- `references/graphify.md` — Graph layer installation, Beads-style review queue, validation
 - `references/codex-hooks.md` — Optional Codex hooks that load Obsidian memory and remind after `git push`
 - `references/setup.md` — Step-by-step first-time setup guide (plugins, MCP, git sync)
 - `assets/vault-CLAUDE.md` — Drop-in schema file for `wiki/CLAUDE.md`
