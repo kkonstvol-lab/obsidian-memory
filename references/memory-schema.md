@@ -21,9 +21,16 @@ Key files:
 
 - `extract_vault.py` — creates typed graph metadata and `graphify-out/graph.json`.
 - `suggest_wikilinks.py` — creates `GRAPH_READY.md` and `missing-links.md`.
+- `hybrid_retrieval.py` — creates query-scored `retrieval_candidates.jsonl`.
 - `review-state.jsonl` — append-only review state for `accepted`, `skipped`, and `obsolete` actions.
 
 Rule: graph scripts must never edit `wiki/` or `raw-sources/`; they only generate reports.
+
+MemPalace-derived memory rules:
+
+- Important conclusions in `memory_decisions.md`, summaries, synthesis, and wings should link to verbatim evidence.
+- Durable decisions are append-only; newer entries supersede older ones instead of silently rewriting them.
+- Precompact/session drafts are safety nets in private memory and are not canonical until reviewed.
 
 ---
 

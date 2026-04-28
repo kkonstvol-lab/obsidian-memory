@@ -5,13 +5,22 @@
 
 ## Architecture
 
-Three layers:
+Obsidian Markdown is the canonical source of truth. Runtime indexes, graph files, retrieval candidates, and autosave drafts are derived or reviewable artifacts.
+
+Three core layers:
 
 1. **Raw Sources** (`raw-sources/`) — immutable originals. PDFs, articles, notes. Claude NEVER edits these files.
 2. **Wiki** (`wiki/`) — LLM-generated and maintained pages. Linked, frontmatter-tagged, searchable.
 3. **Schema** (this file) — the rules Claude follows when working with wiki.
 
 **Separation from memory/:** `memory/` = agent operational context ("what I do and how"). `wiki/` = accumulated knowledge ("what I know and from where"). Never duplicate content between them.
+
+MemPalace-derived practices in this vault:
+
+- **Verbatim-first:** every important claim links to a verbatim source (`raw-sources/`, `wiki/drawers/`, or a conversation/session artifact).
+- **Temporal validity:** decisions, facts, and project/client state carry validity in time; new decisions supersede old ones instead of silently rewriting them.
+- **Hybrid retrieval:** QUERY starts with graph/retrieval candidates, then file search, then source reading.
+- **Precompact autosave:** autosave drafts are a safety net, not canonical memory until `/session-summary` or COMPILE.
 
 ---
 
@@ -48,6 +57,11 @@ domain:
   - ai
 status: active | draft | stale
 confidence: high | medium | low
+valid_from: YYYY-MM-DD
+valid_to:
+supersedes:
+superseded_by:
+source: ""
 tags:
   - wiki
   - wiki/summary
@@ -80,17 +94,18 @@ session_date: YYYY-MM-DD
 compiled: false | true
 wings_updated: []  # filled after COMPILE
 status: locked  # always locked — drawers are immutable
+agent_id: codex | claude | other
 ```
 
 ---
 
 ## Tag Taxonomy
 
-**Structural:** `wiki`, `wiki/summary`, `wiki/entity`, `wiki/concept`, `wiki/synthesis`, `wiki/domain`, `raw-source`
+**Structural:** `wiki`, `wiki/summary`, `wiki/entity`, `wiki/concept`, `wiki/synthesis`, `wiki/domain`, `wiki/wing`, `wing/person`, `wing/project`, `wiki/drawer`, `raw-source`
 
 **Domain** (define your own, examples): `domain/ai`, `domain/marketing`, `domain/business`, `domain/learning`, `domain/engineering`, `domain/psychology`, `domain/personal`
 
-**Palace:** `wiki/wing`, `wing/person`, `wing/project`, `wiki/drawer`
+**MemPalace:** `wiki/wing`, `wing/person`, `wing/project`, `wiki/drawer`
 
 **Status:** `status/draft`, `status/active`, `status/stale`, `status/locked`
 
@@ -114,12 +129,14 @@ Obsidian slash notation: slash = hierarchy in Tag Pane.
 
 ### QUERY — Searching the wiki
 
-1. Read `wiki/index.md` for navigation
-2. Search relevant pages (grep across `wiki/`)
-3. Read found pages
-4. Synthesize answer using `[[wikilinks]]` to reference sources
-5. If synthesis is valuable → save as `wiki/synthesis/synthesis-{topic}.md`
-6. Update `wiki/log.md`
+1. If Graphify is available, read `memory/graph/graphify-out/retrieval_candidates.jsonl` or run graph query first.
+2. Read `wiki/index.md` for navigation.
+3. Search relevant pages with grep/search and graph/retrieval hints.
+4. Read found pages and their verbatim evidence (`raw-sources/`, `wiki/drawers/`).
+5. Synthesize answer using `[[wikilinks]]` to reference sources.
+6. Include `Used Evidence`: drawers/raw/wiki pages actually used.
+7. If synthesis is valuable → save as `wiki/synthesis/synthesis-{topic}.md`.
+8. Update `wiki/log.md`.
 
 ### COMPILE — Compiling drawers into wings
 
@@ -137,8 +154,11 @@ Run after `/session-summary` or manually.
    h. New concepts/entities → update `wiki/concepts/`, `wiki/entities/` if significant
 3. In each updated wing:
    - Append info to the appropriate hall (section)
+   - Put active facts in `Current State`; move superseded facts to `History`
    - Update `updated` in frontmatter
-   - Add `[[drawer-YYYY-MM-DD-slug]]` to **Sources** section (provenance)
+   - Add provenance: every new line ends with `← [[drawer-YYYY-MM-DD-slug]]`
+   - If a fact replaces an older one, set `valid_to` on the older claim and link the new one with `supersedes`
+   - Add `[[drawer-YYYY-MM-DD-slug]]` to **Source Evidence** section
 4. Mark drawer as compiled:
    - `compiled: true`
    - `wings_updated: [list of updated wings]`
@@ -173,6 +193,8 @@ Run periodically. Check:
 10. Tunnel candidates — same entity mentioned in 3+ wings without a cross-link
 11. Staleness by type — person wings > 60 days, project wings > 30 days without update
 12. Contradictions — same fact with different values across wings
+13. Orphan claims — important claims in summaries/synthesis/wings without evidence/source links
+14. Temporal conflicts — two active facts with the same `claim_id`, different `claim_value`, and empty `valid_to`
 
 Write a LINT entry to `wiki/log.md` with findings and actions taken.
 
@@ -190,3 +212,6 @@ Write a LINT entry to `wiki/log.md` with findings and actions taken.
 8. **Drawers are immutable:** after creation, a drawer is NEVER edited. It is the source of truth for what happened.
 9. **Entity vs Wing:** entity = what it IS (company, tool). Wing = your relationship with it (project work, person interactions). Don't duplicate.
 10. **Compile after sessions:** every significant session ends with drawer → compile → wing updates.
+11. **Verbatim-first:** summaries/synthesis/wings may interpret, but they must link to source evidence.
+12. **Temporal append-only:** never silently rewrite decisions/facts; use `valid_to`, `supersedes`, and `superseded_by`.
+13. **Drafts are not memory:** precompact/session autosave drafts are non-canonical until human/session-summary review.

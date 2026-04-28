@@ -2,6 +2,15 @@
 
 Full specification for the `wiki/` knowledge layer. This file extends the SKILL.md operations with complete detail.
 
+Obsidian Markdown is the canonical source of truth. Graphs, retrieval reports, indexes, and autosave drafts are derived or reviewable artifacts.
+
+MemPalace-derived practices in this schema:
+
+- **Verbatim-first:** important claims link to raw sources, drawers, or session artifacts.
+- **Temporal validity:** decisions, facts, and project/client state can declare `valid_from`, `valid_to`, `supersedes`, and `superseded_by`.
+- **Hybrid retrieval:** QUERY starts with graph/retrieval candidates, then file search, then source reading.
+- **Precompact autosave:** drafts are non-canonical until reviewed by `/session-summary` or COMPILE.
+
 ---
 
 ## Page Types
@@ -40,6 +49,11 @@ domain:
   - marketing
 status: active | draft | stale
 confidence: high | medium | low
+valid_from: YYYY-MM-DD
+valid_to:
+supersedes:
+superseded_by:
+source: ""
 tags:
   - wiki
   - wiki/summary      # replace with wiki/{type}
@@ -76,6 +90,7 @@ session_date: YYYY-MM-DD
 compiled: false | true
 wings_updated: []  # filled after COMPILE — list of wing files updated
 status: locked    # always locked — drawers are immutable
+agent_id: codex | claude | other
 ```
 
 ---
@@ -121,6 +136,7 @@ Tags use Obsidian slash notation (slash = hierarchy in Tag Pane).
    - Extracted entities: list what should become entity pages
    - Related concepts: list what should become concept pages
    - Conclusions: your interpretation, what this means for your domains
+   - Source Evidence: verbatim source link, key quote/excerpt, evidence links
 5. **Create/update entities** in `wiki/entities/`:
    - Only for entities appearing in 2+ sources
    - Add incoming link from the summary: `[[entity-name]]`
@@ -148,12 +164,13 @@ Tags use Obsidian slash notation (slash = hierarchy in Tag Pane).
 
 ## QUERY — Detailed Workflow
 
-1. **Orient:** Read `wiki/CLAUDE.md` (if not in context) to understand the schema
-2. **Navigate:** Read `wiki/index.md` to find relevant domains and page types
-3. **Search:** Grep across `wiki/` for relevant terms, concepts, entities
-4. **Read:** Load the most relevant pages into context
-5. **Synthesize:** Construct the answer, citing sources with `[[wikilinks]]`
-6. **Save synthesis** (if valuable): Create `wiki/synthesis/synthesis-{topic}.md`
+1. **Graph/retrieval first:** Use graph query or `graphify-out/retrieval_candidates.jsonl` if available.
+2. **Orient:** Read `wiki/CLAUDE.md` (if not in context) to understand the schema.
+3. **Navigate:** Read `wiki/index.md` to find relevant domains and page types.
+4. **Search:** Grep across `wiki/` for relevant terms, concepts, entities.
+5. **Read:** Load the most relevant pages plus their verbatim evidence (`raw-sources/`, `wiki/drawers/`).
+6. **Synthesize:** Construct the answer, citing sources with `[[wikilinks]]` and listing `Used Evidence`.
+7. **Save synthesis** (if valuable): Create `wiki/synthesis/synthesis-{topic}.md`
    - Use the `wiki-synthesis` template
    - Include: question/theme, sources used, analysis, conclusions
 7. **Log:** Append QUERY entry to `wiki/log.md`
@@ -173,6 +190,8 @@ Run weekly or before major work sessions. Check each item:
 | Unprocessed sources | Files in `raw-sources/converted/` without a summary | Run INGEST for each |
 | Index drift | Wiki pages missing from `wiki/index.md` | Add missing rows to index |
 | Duplicate entities | Two files for the same entity | Merge into one, update all references |
+| Orphan claims | Important claims without raw/drawer/session evidence | Add evidence link or mark as needs review |
+| Temporal conflicts | Active facts with same `claim_id`, different `claim_value`, empty `valid_to` | Review, supersede, or add `valid_to` |
 
 **Palace-specific checks (add to weekly LINT):**
 
@@ -206,9 +225,11 @@ Triggered after `/session-summary` or by running `/compile` manually.
 3. For each wing to update:
    - Read current wing content
    - Append new entries to appropriate halls (do not duplicate)
+   - Put active facts in `Current State`; move superseded facts to `History`
    - Provenance: each new entry ends with `← [[drawer-YYYY-MM-DD-slug]]`
+   - If a new fact replaces an older fact, set temporal metadata (`valid_to`, `supersedes`, `superseded_by`)
    - Update `updated` in frontmatter
-   - Add drawer to **Sources** section
+   - Add drawer to **Source Evidence** section
 4. Mark drawer: `compiled: true`, `wings_updated: [list of wings]`
 5. Update `wiki/index.md` — add any new wings to the Wings tables
 6. Append COMPILE entry to `wiki/log.md`:

@@ -13,6 +13,7 @@ The bundled graph layer includes:
 
 - `extract_vault.py` — builds `graphify-out/graph.json`, `GRAPH_REPORT.md`, and missing target suggestions.
 - `suggest_wikilinks.py` — builds `graphify-out/missing-links.md` and `GRAPH_READY.md`.
+- `hybrid_retrieval.py` — builds `graphify-out/retrieval_candidates.jsonl` for a specific query.
 - `review-state.jsonl` — append-only human review state.
 - `tests/test_graphify_beads.py` — fixture test for stable IDs, review-state behavior, and raw-source safety.
 
@@ -25,6 +26,8 @@ Nodes include typed metadata:
 - `node_type`: `wiki`, `raw_source`, `missing`, `domain`, `summary`, `entity`, `concept`, or `document`
 - `source_path`
 - `stable_id`
+- `valid_from`, `valid_to`, `supersedes`, `superseded_by`
+- `claim_id`, `claim_value`, `has_evidence`
 
 Edges include typed metadata:
 
@@ -35,6 +38,14 @@ Edges include typed metadata:
 - `review_status`
 
 Generated actions use stable IDs like `gq-a1b2c3d4e5`.
+
+MemPalace-derived relation/action types:
+
+- `derived_from` — wiki node points to raw source or drawer evidence
+- `supersedes` — newer fact/decision replaces an older one
+- `valid_during` — node is valid during a temporal period
+- `add_source_evidence` — review action for orphan claims without explicit evidence
+- `review_temporal_conflict` — review action for conflicting active facts
 
 ## Review State
 
@@ -57,6 +68,7 @@ Allowed statuses:
 cd {VAULT}/memory/graph
 python extract_vault.py
 python suggest_wikilinks.py
+python hybrid_retrieval.py "current project priorities"
 ```
 
 For multi-agent vaults:
@@ -74,6 +86,7 @@ Generated outputs:
 - `graphify-out/GRAPH_READY.md`
 - `graphify-out/missing-links.md`
 - `graphify-out/wikilink-suggestions.md`
+- `graphify-out/retrieval_candidates.jsonl`
 
 ## Human Review Rules
 
@@ -88,6 +101,7 @@ Generated outputs:
 ```bash
 cd {VAULT}/memory/graph
 python -m py_compile extract_vault.py suggest_wikilinks.py tests/test_graphify_beads.py
+python -m py_compile hybrid_retrieval.py
 python tests/test_graphify_beads.py
 ```
 
@@ -96,6 +110,8 @@ The fixture test checks:
 - stable node, edge, and action IDs between runs
 - `GRAPH_READY.md` sections
 - `review-state.jsonl` filtering
+- provenance and temporal review actions
+- hybrid retrieval candidate ranking
 - no writes to `raw-sources/`
 
 ## MCP

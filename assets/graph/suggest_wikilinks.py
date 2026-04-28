@@ -97,6 +97,11 @@ def is_missing(node_id: str) -> bool:
     return G.nodes[node_id].get("node_type") == "missing" or G.nodes[node_id].get("folder") == "__missing__"
 
 
+def is_vault_node(node_id: str) -> bool:
+    source = G.nodes[node_id].get("source_file", "")
+    return (source.startswith("wiki/") or source.startswith("raw-sources/")) and not is_missing(node_id)
+
+
 def active(actions: list[dict]) -> list[dict]:
     return [a for a in actions if a["status"] == "open"]
 
@@ -149,7 +154,7 @@ for nid, d in G.nodes(data=True):
     if cid is not None:
         communities.setdefault(int(cid), []).append(nid)
 
-vault_nodes = {nid for nid in G.nodes if not is_missing(nid)}
+vault_nodes = {nid for nid in G.nodes if is_vault_node(nid)}
 extracted_pairs: set[frozenset] = {
     frozenset((u, v))
     for u, v, d in G.edges(data=True)
@@ -241,6 +246,43 @@ for cid, members in sorted(communities.items()):
         key_parts=(cid, len(vault_members), tuple(top)),
         reason="В community 5+ vault-страниц и нет domain/MOC-узла.",
         meta={"community": cid, "size": len(vault_members)},
+    )
+
+for nid in sorted(vault_nodes):
+    node = G.nodes[nid]
+    if node.get("node_type") not in {"summary", "synthesis", "wing"}:
+        continue
+    if node.get("has_evidence"):
+        continue
+    add_action(
+        actions,
+        "add_source_evidence",
+        f"Добавить verbatim evidence: {node_label(nid)}",
+        [node_file(nid)],
+        key_parts=(nid, node_file(nid)),
+        reason="Страница содержит интерпретационный слой, но не имеет явной ссылки на raw source, drawer или Source Evidence.",
+        meta={"node_type": node.get("node_type")},
+    )
+
+claims: dict[str, list[str]] = {}
+for nid in sorted(vault_nodes):
+    claim_id = G.nodes[nid].get("claim_id")
+    valid_to = G.nodes[nid].get("valid_to")
+    if claim_id and not valid_to:
+        claims.setdefault(str(claim_id), []).append(nid)
+
+for claim_id, members in sorted(claims.items()):
+    values = {str(G.nodes[n].get("claim_value", "")) for n in members}
+    if len(members) < 2 or len(values) < 2:
+        continue
+    add_action(
+        actions,
+        "review_temporal_conflict",
+        f"Разобрать temporal conflict: {claim_id}",
+        [node_file(n) for n in members],
+        key_parts=(claim_id, tuple(sorted(values)), tuple(sorted(members))),
+        reason="Есть несколько активных фактов с одинаковым claim_id, разным claim_value и пустым valid_to.",
+        meta={"claim_id": claim_id, "claim_values": sorted(values)},
     )
 
 ready_actions = ready(actions)

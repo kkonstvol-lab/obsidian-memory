@@ -12,6 +12,11 @@ tags:
   - wiki/summary
 status: active
 confidence: high
+valid_from: {{date}}
+valid_to:
+supersedes:
+superseded_by:
+source: ""
 ---
 
 # {{title}}
@@ -32,6 +37,14 @@ confidence: high
 
 
 
+## Source Evidence
+
+- Verbatim source:
+- Key quote / excerpt:
+  >
+- Evidence links:
+  -
+
 ## Extracted Entities
 
 - 
@@ -42,3 +55,4 @@ confidence: high
 
 ## Conclusions
 
+-

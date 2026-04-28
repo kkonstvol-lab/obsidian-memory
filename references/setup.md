@@ -121,10 +121,12 @@ Regenerate:
 cd {YOUR_VAULT_PATH}/memory/graph
 python extract_vault.py
 python suggest_wikilinks.py
+python hybrid_retrieval.py "initial vault setup"
 python tests/test_graphify_beads.py
 ```
 
 Review `graphify-out/GRAPH_READY.md` before editing wiki pages. Record accepted/skipped/obsolete decisions in `review-state.jsonl`.
+Use `graphify-out/retrieval_candidates.jsonl` only as a derived hint list; Markdown remains canonical.
 
 ---
 
@@ -199,6 +201,7 @@ Copy these files from the skill into your Codex config:
 mkdir -p ~/.codex/hooks
 cp assets/codex/hooks/codex-session-start.js ~/.codex/hooks/
 cp assets/codex/hooks/codex-post-tool-use.js ~/.codex/hooks/
+cp assets/codex/hooks/precompact-autosave.js ~/.codex/hooks/
 cp assets/codex/hooks/hooks.json.template ~/.codex/hooks.json
 ```
 
@@ -242,6 +245,9 @@ echo '{"source":"resume","cwd":"/path/to/repo","hook_event_name":"SessionStart"}
 
 echo '{"tool_name":"Bash","tool_input":{"command":"git push origin main"},"cwd":"/path/to/repo","hook_event_name":"PostToolUse"}' \
   | node ~/.codex/hooks/codex-post-tool-use.js
+
+echo '{"agent_id":"codex","session_id":"demo","user_goal":"test autosave","important_decisions":["Markdown remains canonical"],"trigger":"precompact"}' \
+  | node ~/.codex/hooks/precompact-autosave.js
 ```
 
 `startup` should print bounded Obsidian context. `resume` should stay silent. `git push` should print a JSON reminder to update Obsidian memory.

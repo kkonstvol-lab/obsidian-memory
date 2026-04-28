@@ -20,6 +20,7 @@
 - Wing для любого человека или проекта → 5 залов: Facts, Events, Discoveries, Preferences, Advice/Decisions
 - Каждая сессия создаёт неизменяемый Drawer (лог сессии) → COMPILE обновляет Wings автоматически
 - Провенанс: каждый факт в Wing ссылается на исходный Drawer
+- Verbatim-first, temporal validity, hybrid retrieval и precompact autosave — без внедрения MemPalace runtime/ChromaDB/SQLite как source of truth
 
 **Self-Improvement Loop** (`{private}/memory_corrections.md` + 3 файла) — агент учится на ошибках:
 - Логировать каждую логическую/процессную ошибку → обнаруживать паттерны
@@ -29,12 +30,15 @@
 **Codex Hooks** (`assets/codex/hooks/`) — optional lifecycle-интеграция Codex с Obsidian:
 - `SessionStart` загружает bounded operational context из vault
 - `PostToolUse` после `git push` напоминает обновить `memory_in_progress.md`
+- `precompact-autosave.js` создаёт non-canonical draft drawer перед сжатием/завершением сессии
 - Источник правды — Obsidian memory, не GitHub Issues
 
 **Graphify Knowledge Graph** (`memory/graph/`) — семантический слой поверх Wiki:
 - Автоматически извлекает связи между страницами через wikilinks → граф (NetworkX)
 - Leiden-кластеризация → тематические communities → кандидаты на новые MOC
 - Beads-style очередь ревью `GRAPH_READY.md`: готовые действия, блокеры, решения человека
+- MemPalace-derived проверки: orphan claims без evidence, temporal conflicts, `derived_from`/`supersedes`/`valid_during`
+- `hybrid_retrieval.py` генерирует `retrieval_candidates.jsonl` как производный scored candidate report
 - Устойчивые IDs для узлов, связей и предложений; `review-state.jsonl` для accepted/skipped/obsolete
 - MCP-сервер graphify → агенты делают `query_graph` перед grep
 - Скрипты не редактируют `wiki/` и `raw-sources/`, только генерируют отчёты
@@ -77,6 +81,7 @@ Codex-интеграция устанавливается отдельно, по
 mkdir -p ~/.codex/hooks
 cp assets/codex/hooks/codex-session-start.js ~/.codex/hooks/
 cp assets/codex/hooks/codex-post-tool-use.js ~/.codex/hooks/
+cp assets/codex/hooks/precompact-autosave.js ~/.codex/hooks/
 cp assets/codex/hooks/hooks.json.template ~/.codex/hooks.json
 cp assets/codex/memory_in_progress.md /path/to/obsidian-vault/12-codex/memory_in_progress.md
 ```
@@ -118,12 +123,15 @@ obsidian-memory/
     ├── graph/
     │   ├── extract_vault.py
     │   ├── suggest_wikilinks.py
+    │   ├── hybrid_retrieval.py
     │   ├── review-state.jsonl
     │   └── tests/
     ├── codex/
     │   ├── hooks/
     │   │   ├── codex-session-start.js
     │   │   ├── codex-post-tool-use.js
+    │   │   ├── precompact-autosave.js
+    │   │   ├── tests/
     │   │   └── hooks.json.template
     │   ├── memory_in_progress.md
     │   └── env.example
@@ -193,6 +201,7 @@ vault/
 │   └── graph/              ← graphify knowledge graph
 │       ├── extract_vault.py
 │       ├── suggest_wikilinks.py
+│       ├── hybrid_retrieval.py
 │       ├── review-state.jsonl
 │       ├── tests/
 │       └── graphify-out/
@@ -226,6 +235,9 @@ vault/
 7. **Entity vs Wing** — entity = что это ЕСТЬ; wing = ваши отношения с этим
 8. **Graph before grep** — при QUERY сначала `query_graph`, потом файловый поиск
 9. **Private isolation** — в мультиагентном сетапе ошибки и heartbeat каждого агента хранятся отдельно
+10. **Verbatim-first** — важные выводы ссылаются на raw source, drawer или session artifact
+11. **Temporal append-only** — новые факты/решения supersede старые, а не затирают их
+12. **Drafts are not memory** — precompact autosave drafts не canonical до review/session-summary
 
 ---
 
@@ -261,6 +273,7 @@ cp -R assets/graph/* /path/to/vault/memory/graph/
 cd /path/to/vault/memory/graph
 python extract_vault.py
 python suggest_wikilinks.py
+python hybrid_retrieval.py "current project priorities"
 
 # Проверка
 python tests/test_graphify_beads.py
@@ -280,6 +293,8 @@ python tests/test_graphify_beads.py
 После этого агент может использовать `mcp__graphify__query_graph` для семантических запросов к графу перед тем как делать grep по файлам.
 
 `GRAPH_READY.md` — это очередь человеческого ревью. Принятые/отклонённые решения фиксируются в `review-state.jsonl`, а не ручной правкой generated reports. Подробнее: `references/graphify.md`.
+
+`retrieval_candidates.jsonl` — производный hybrid retrieval report. Он учитывает keyword overlap, person/project boost, recency и source quality; Markdown vault остаётся источником истины.
 
 ---
 

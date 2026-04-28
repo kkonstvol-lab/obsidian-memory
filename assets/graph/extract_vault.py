@@ -36,6 +36,8 @@ REVIEW_STATE.touch(exist_ok=True)
 WIKILINK_RE = re.compile(r"\[\[([^\]\|#]+)(?:#[^\]\|]+)?(?:\|[^\]]+)?\]\]")
 H1_RE = re.compile(r"^#\s+(.+)$", re.MULTILINE)
 TAG_RE = re.compile(r"(?:^|\s)#([a-z][a-z0-9/_-]+)", re.IGNORECASE)
+FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*", re.DOTALL)
+EVIDENCE_LINK_RE = re.compile(r"(?:←\s*)?\[\[([^\]\|#]+)(?:#[^\]\|]+)?(?:\|[^\]]+)?\]\]")
 
 FOLDER_TYPE = {
     "entities": "document",
@@ -57,6 +59,8 @@ WIKI_NODE_TYPES = {
     "concepts": "concept",
     "summaries": "summary",
     "synthesis": "synthesis",
+    "drawers": "drawer",
+    "wings": "wing",
 }
 
 
@@ -85,6 +89,19 @@ def collect_md(roots: list[Path]) -> list[Path]:
 def label_of(f: Path, text: str) -> str:
     m = H1_RE.search(text)
     return m.group(1).strip() if m else f.stem
+
+
+def parse_frontmatter(text: str) -> dict[str, str]:
+    match = FRONTMATTER_RE.match(text)
+    if not match:
+        return {}
+    values: dict[str, str] = {}
+    for raw_line in match.group(1).splitlines():
+        if ":" not in raw_line or raw_line.startswith(" "):
+            continue
+        key, value = raw_line.split(":", 1)
+        values[key.strip()] = value.strip().strip('"').strip("'")
+    return values
 
 
 def rel(f: Path) -> str:
@@ -148,6 +165,21 @@ def make_edge(source: str, target: str, relation: str, confidence: str, source_f
     }
 
 
+def ensure_derived_node(node_id: str, label: str, node_type: str, source_file: str = "") -> None:
+    if node_id in nodes:
+        return
+    nodes[node_id] = {
+        "id": node_id,
+        "label": label,
+        "file_type": "document",
+        "source_file": source_file,
+        "source_path": source_file,
+        "folder": f"__{node_type}__",
+        "node_type": node_type,
+        "stable_id": stable_id("gn", node_type, label),
+    }
+
+
 review_state = load_review_state(REVIEW_STATE)
 
 files = collect_md(CORPUS_ROOTS)
@@ -159,6 +191,7 @@ id_to_text: dict[str, str] = {}
 
 for f in files:
     text = f.read_text(encoding="utf-8", errors="replace")
+    fm = parse_frontmatter(text)
     total_words += len(text.split())
     folder = f.parent.name
     node_id = slugify(f.stem)
@@ -174,6 +207,23 @@ for f in files:
         "folder": folder,
         "node_type": node_type_of(f, folder),
         "stable_id": stable_id("gn", source_path),
+        "updated": fm.get("updated", ""),
+        "valid_from": fm.get("valid_from", ""),
+        "valid_to": fm.get("valid_to", ""),
+        "supersedes": fm.get("supersedes", ""),
+        "superseded_by": fm.get("superseded_by", ""),
+        "claim_id": fm.get("claim_id", ""),
+        "claim_value": fm.get("claim_value", ""),
+        "source": fm.get("source") or fm.get("source_file", ""),
+        "has_evidence": bool(
+            fm.get("source")
+            or fm.get("source_file")
+            or "## Source Evidence" in text
+            or "## Evidence" in text
+            or "← [[" in text
+            or "raw-sources/" in text
+            or "wiki/drawers/" in text
+        ),
     }
     nodes[node_id] = node
     stem_to_id[f.stem.lower()] = node_id
@@ -185,6 +235,7 @@ tag_to_nodes: dict[str, set] = {}
 
 for node_id, text in id_to_text.items():
     src_file = nodes[node_id]["source_file"]
+    node = nodes[node_id]
 
     for m in WIKILINK_RE.finditer(text):
         target_name = m.group(1).strip()
@@ -204,6 +255,10 @@ for node_id, text in id_to_text.items():
             }
         edges.append(make_edge(node_id, tgt_id, "links_to", "EXTRACTED", src_file, review_state))
 
+        target_file = nodes.get(tgt_id, {}).get("source_file", "")
+        if target_file.startswith("raw-sources/") or target_file.startswith("wiki/drawers/") or "raw-sources/" in target_name or "drawer-" in target_name:
+            edges.append(make_edge(node_id, tgt_id, "derived_from", "EXTRACTED", src_file, review_state))
+
     for tm in TAG_RE.finditer(text):
         tag = tm.group(1).lower()
         if tag in ("md", "markdown", "obsidian"):
@@ -217,6 +272,23 @@ for tag, ids in tag_to_nodes.items():
         for j in range(i + 1, len(ids)):
             relation = f"shares_tag:{tag}"
             edges.append(make_edge(ids[i], ids[j], relation, "INFERRED", "__tag_index__", review_state))
+
+for node_id, node in list(nodes.items()):
+    supersedes = node.get("supersedes", "")
+    if supersedes:
+        target_name = supersedes.strip("[]")
+        target_id = stem_to_id.get(target_name.lower()) or slugify(target_name)
+        if target_id not in nodes:
+            ensure_derived_node(target_id, target_name, "missing", node.get("source_file", ""))
+        edges.append(make_edge(node_id, target_id, "supersedes", "EXTRACTED", node.get("source_file", ""), review_state))
+
+    valid_from = node.get("valid_from", "")
+    valid_to = node.get("valid_to", "")
+    if valid_from or valid_to:
+        label = f"{valid_from or 'unknown'}..{valid_to or 'open'}"
+        temporal_id = stable_id("time", label)
+        ensure_derived_node(temporal_id, label, "temporal_period")
+        edges.append(make_edge(node_id, temporal_id, "valid_during", "EXTRACTED", node.get("source_file", ""), review_state))
 
 extraction = {"nodes": list(nodes.values()), "edges": edges}
 errors = build.validate_extraction(extraction)

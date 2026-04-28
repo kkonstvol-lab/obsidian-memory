@@ -1,6 +1,6 @@
 ---
 name: obsidian-memory
-description: "Создаёт и поддерживает систему постоянной памяти для AI-агентов на базе Obsidian. Скил объединяет три взаимосвязанные системы: (1) LLM Wiki — курируемая база знаний из конспектов, сущностей и концептов, извлечённых из книг, статей и PDF, связанных wikilinks и Maps of Content; (2) MemPalace — слой Wings (профили людей и проектов) и Drawers (неизменяемые логи сессий), которые компилируют накопленный опыт в структурированный контекст; (3) Self-Improvement Loop — приватная оперативная память каждого агента (текущий фокус, ошибки, in-progress задачи, бэклог, heartbeat, метрики), которая учится на своих ошибках без смешивания контекстов. Поверх всех трёх систем работает Graphify knowledge graph — автоматически находит связи между страницами, строит Leiden communities, генерирует Beads-style очередь ревью `GRAPH_READY.md` и предоставляет граф через MCP tools, поэтому агенты делают graph query перед grep. Поддерживает мультиагентные сетапы (Claude Code + Codex): мировые факты общие, оперативная память полностью изолирована по агентам. Операции: SETUP, INGEST, QUERY, LINT, GRAPH, MEMORY, CODEX-HOOKS, COMPILE, WING. Triggers: 'ingest', 'add to wiki', 'query wiki', 'lint wiki', 'obsidian memory', 'obsidian wiki', '/obsidian-memory', 'llm wiki', 'knowledge base', 'wiki setup', 'codex hooks', 'codex memory hooks', 'compile', 'create wing', 'person profile', 'project profile', 'knowledge graph', 'graphify', 'graph ready', 'missing links'."
+description: "Создаёт и поддерживает систему постоянной памяти для AI-агентов на базе Obsidian. Скил объединяет три взаимосвязанные системы: (1) LLM Wiki — курируемая база знаний из конспектов, сущностей и концептов, извлечённых из книг, статей и PDF, связанных wikilinks и Maps of Content; (2) MemPalace — слой Wings (профили людей и проектов) и Drawers (неизменяемые логи сессий), которые компилируют накопленный опыт в структурированный контекст, с verbatim-first evidence и temporal validity; (3) Self-Improvement Loop — приватная оперативная память каждого агента (текущий фокус, ошибки, in-progress задачи, бэклог, heartbeat, метрики), которая учится на своих ошибках без смешивания контекстов. Поверх всех трёх систем работает Graphify knowledge graph — автоматически находит связи между страницами, строит Leiden communities, генерирует Beads-style очередь ревью `GRAPH_READY.md`, hybrid retrieval candidates и предоставляет граф через MCP tools, поэтому агенты делают graph query перед grep. Поддерживает мультиагентные сетапы (Claude Code + Codex): мировые факты общие, оперативная память полностью изолирована по агентам. Codex hooks включают session start, post-push reminder и precompact autosave drafts. Операции: SETUP, INGEST, QUERY, LINT, GRAPH, MEMORY, CODEX-HOOKS, COMPILE, WING. Triggers: 'ingest', 'add to wiki', 'query wiki', 'lint wiki', 'obsidian memory', 'obsidian wiki', '/obsidian-memory', 'llm wiki', 'knowledge base', 'wiki setup', 'codex hooks', 'codex memory hooks', 'precompact autosave', 'compile', 'create wing', 'person profile', 'project profile', 'knowledge graph', 'graphify', 'graph ready', 'hybrid retrieval', 'missing links'."
 ---
 
 # Obsidian Memory — LLM Wiki + Agent Memory System
@@ -74,11 +74,11 @@ vault/
 |-----------|------|-------------|
 | **SETUP** | First time, empty vault | Create folder structure + copy assets/ |
 | **INGEST** | New source to process | Read source → create summary → extract entities/concepts |
-| **QUERY** | Need knowledge from wiki | Read index.md → grep → synthesize → optionally save synthesis |
+| **QUERY** | Need knowledge from wiki | Graph/retrieval candidates → grep → source evidence → synthesize |
 | **LINT** | Weekly or before major work | Check links, orphans, frontmatter, index drift + Palace checks |
 | **GRAPH** | After bulk ingests (5+ pages) | Regenerate graph + review queue |
 | **MEMORY** | Start of any work session | Load memory files in correct order before working |
-| **CODEX-HOOKS** | Optional Codex automation | Install Codex lifecycle hooks that load Obsidian memory |
+| **CODEX-HOOKS** | Optional Codex automation | Install lifecycle hooks, push reminders, and precompact autosave drafts |
 | **COMPILE** | After each session | Process uncompiled drawers → update wings |
 | **WING** | When creating a person/project profile | `/wing person Name` or `/wing project Name` |
 
@@ -125,14 +125,16 @@ vault/
 Before touching files, call `mcp__graphify__query_graph` with the question as natural language.
 - Results include EXTRACTED nodes → use their `source_file` paths as starting points for step 3
 - Results are empty or confidence weak → skip to step 1 as normal
+- If `graphify-out/retrieval_candidates.jsonl` exists, use it as a ranked hint list, not as source of truth.
 
 1. Read `wiki/CLAUDE.md` to orient (if not already in context)
 2. Read `wiki/index.md` to navigate
 3. Search relevant pages (grep across `wiki/`, or follow `source_file` hints from graph query)
-4. Read the found pages
+4. Read the found pages and their verbatim evidence (`raw-sources/`, `wiki/drawers/`)
 5. Synthesize an answer using `[[wikilinks]]` to reference sources
-6. If the synthesis is valuable (cross-source insight) → save as `wiki/synthesis/synthesis-{topic}.md`
-7. Append QUERY entry to `wiki/log.md`
+6. Include `Used Evidence`: drawers/raw/wiki pages actually used
+7. If the synthesis is valuable (cross-source insight) → save as `wiki/synthesis/synthesis-{topic}.md`
+8. Append QUERY entry to `wiki/log.md`
 
 **Graphify MCP tools (if installed):**
 - `mcp__graphify__query_graph` — semantic BFS/DFS traversal by question (use first)
@@ -151,6 +153,8 @@ Check and report:
 5. **Unprocessed sources** — files in `raw-sources/converted/` without a summary
 6. **Index drift** — pages exist but not in `index.md`
 7. **Duplicate entities** — two files about the same entity
+8. **Orphan claims** — important claims in summaries/synthesis/wings without source evidence
+9. **Temporal conflicts** — active facts with same `claim_id`, different `claim_value`, and empty `valid_to`
 
 Write a LINT entry to `wiki/log.md` with findings and actions taken.
 
@@ -161,10 +165,11 @@ Write a LINT entry to `wiki/log.md` with findings and actions taken.
    - single-agent: `memory/graph/`
    - multi-agent: `12-shared/graph/`
 3. Run `python extract_vault.py`, then `python suggest_wikilinks.py` from the graph folder.
-4. Review `graphify-out/GRAPH_READY.md` before editing any wiki pages.
-5. Use `review-state.jsonl` for accepted/skipped/obsolete actions. Do not manually edit generated reports as source of truth.
-6. Never let graph scripts modify `wiki/` or `raw-sources/`; they only generate reports.
-7. For validation, run `python tests/test_graphify_beads.py`.
+4. Optionally run `python hybrid_retrieval.py "your query"` to build `graphify-out/retrieval_candidates.jsonl`.
+5. Review `graphify-out/GRAPH_READY.md` before editing any wiki pages.
+6. Use `review-state.jsonl` for accepted/skipped/obsolete actions. Do not manually edit generated reports as source of truth.
+7. Never let graph scripts modify `wiki/` or `raw-sources/`; they only generate reports.
+8. For validation, run `python tests/test_graphify_beads.py`.
 
 ### MEMORY — Loading agent context
 
@@ -203,11 +208,12 @@ Use this operation when the user wants Codex to load Obsidian memory automatical
 
 1. Read `references/codex-hooks.md` first.
 2. Copy `assets/codex/hooks/codex-session-start.js` and `assets/codex/hooks/codex-post-tool-use.js` into `~/.codex/hooks/`.
-3. Copy `assets/codex/hooks/hooks.json.template` to `~/.codex/hooks.json`.
-4. Configure the vault path with `OBSIDIAN_VAULT_PATH` or `~/.codex/obsidian-memory.json`.
-5. Copy `assets/codex/memory_in_progress.md` into the agent private memory root if it does not exist.
-6. Enable `[features].codex_hooks = true` only after confirming the local Codex runtime supports hooks.
-7. Run the manual smoke tests from `references/codex-hooks.md`.
+3. Copy `assets/codex/hooks/precompact-autosave.js` if you want non-canonical session draft autosave.
+4. Copy `assets/codex/hooks/hooks.json.template` to `~/.codex/hooks.json`.
+5. Configure the vault path with `OBSIDIAN_VAULT_PATH` or `~/.codex/obsidian-memory.json`.
+6. Copy `assets/codex/memory_in_progress.md` into the agent private memory root if it does not exist.
+7. Enable `[features].codex_hooks = true` only after confirming the local Codex runtime supports hooks.
+8. Run the manual smoke tests from `references/codex-hooks.md`.
 
 **Do not depend on GitHub Issues.** Store active work state in Obsidian memory. Links to GitHub, Linear, or Obsidian notes are optional task metadata.
 
@@ -221,10 +227,12 @@ Use this operation when the user wants Codex to load Obsidian memory automatical
    - Classify into halls: Facts / Events / Discoveries / Preferences / Decisions
 4. Update each affected wing:
    - Append new info to the correct hall section
+   - Put active facts in `Current State`; move superseded facts to `History`
    - Do not duplicate existing entries
    - Add provenance: each new line ends with `← [[drawer-YYYY-MM-DD-slug]]`
+   - If a fact replaces an older one, set temporal metadata (`valid_to`, `supersedes`, `superseded_by`)
    - Update `updated` in frontmatter
-   - Add drawer to **Sources** section
+   - Add drawer to **Source Evidence** section
 5. Mark drawer as compiled: `compiled: true`, `wings_updated: [list]`
 6. Update `wiki/index.md` if new wings were created
 7. Append COMPILE entry to `wiki/log.md`
@@ -259,6 +267,9 @@ Usage: `/wing person John Smith` or `/wing project Acme Redesign`
 8. **Drawers are immutable:** After creation, a drawer is NEVER edited. It is the source of truth for the past. The only permitted change is setting `compiled: true`.
 9. **Entity vs Wing:** Entity = what it IS (company, tool). Wing = your relationship with it (project work, person interactions). Don't duplicate between them.
 10. **Compile after sessions:** Every significant session ends with: create drawer → run COMPILE → wings updated.
+11. **Verbatim-first:** Important conclusions in summaries, synthesis, wings, or decisions link to raw sources, drawers, or session artifacts.
+12. **Temporal append-only:** New decisions/facts supersede older ones instead of silently rewriting them.
+13. **Drafts are not memory:** Precompact/session autosave drafts are non-canonical until reviewed by `/session-summary` or COMPILE.
 
 ---
 

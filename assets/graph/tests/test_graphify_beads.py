@@ -18,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests" / "fixtures" / "minimal-vault"
 EXTRACT = ROOT / "extract_vault.py"
 SUGGEST = ROOT / "suggest_wikilinks.py"
+HYBRID = ROOT / "hybrid_retrieval.py"
 RAW_SOURCE = FIXTURE / "raw-sources" / "articles" / "raw-source.md"
 
 
@@ -27,6 +28,13 @@ def run_script(script: Path, out_dir: Path, review_state: Path) -> None:
     env["GRAPHIFY_OUT"] = str(out_dir)
     env["GRAPHIFY_REVIEW_STATE"] = str(review_state)
     subprocess.run([sys.executable, str(script)], cwd=str(ROOT), env=env, check=True)
+
+
+def run_hybrid(out_dir: Path, query: str) -> None:
+    env = os.environ.copy()
+    env["GRAPHIFY_OUT"] = str(out_dir)
+    env["GRAPHIFY_GRAPH"] = str(out_dir / "graph.json")
+    subprocess.run([sys.executable, str(HYBRID), query], cwd=str(ROOT), env=env, check=True)
 
 
 def graph_ids(out_dir: Path) -> tuple[set[str], set[str], dict]:
@@ -59,6 +67,10 @@ def main() -> None:
         assert edges1 == edges2, "edge stable IDs changed between runs"
         assert all("node_type" in n and "source_path" in n and "stable_id" in n for n in data1["nodes"])
         assert all("edge_id" in e and "review_status" in e and "source_file" in e for e in data1["links"])
+        relations = {e["relation"] for e in data1["links"]}
+        assert "derived_from" in relations, "derived_from relation missing"
+        assert "supersedes" in relations, "supersedes relation missing"
+        assert "valid_during" in relations, "valid_during relation missing"
 
         ready_text = (out1 / "GRAPH_READY.md").read_text(encoding="utf-8")
         assert "Готово к ревью" in ready_text
@@ -66,6 +78,18 @@ def main() -> None:
         assert "Требует решения" in ready_text
         assert "Принято/отклонено ранее" in ready_text
         assert "create_missing_page" in ready_text
+        assert "add_source_evidence" in ready_text
+        assert "review_temporal_conflict" in ready_text
+
+        run_hybrid(out1, "project alpha active")
+        candidates = [
+            json.loads(line)
+            for line in (out1 / "retrieval_candidates.jsonl").read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        assert candidates, "hybrid retrieval candidates not generated"
+        assert candidates[0]["score"] >= candidates[-1]["score"], "hybrid candidates not sorted"
+        assert any("alpha" in c["label"].lower() for c in candidates[:3]), "alpha candidate did not rank near top"
 
         match = re.search(r"`(gq-[0-9a-f]+)` \*\*Создать или исправить missing page", ready_text)
         assert match, "missing-page action ID not found"
