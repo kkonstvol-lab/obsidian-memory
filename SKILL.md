@@ -1,6 +1,6 @@
 ---
 name: obsidian-memory
-description: "Создаёт и поддерживает систему постоянной памяти для AI-агентов на базе Obsidian. Скил объединяет три взаимосвязанные системы: (1) LLM Wiki — курируемая база знаний из конспектов, сущностей и концептов, извлечённых из книг, статей и PDF, связанных wikilinks и Maps of Content; (2) Robby Palace — слой Wings (профили людей и проектов) и Drawers (неизменяемые логи сессий), которые компилируют накопленный опыт в структурированный контекст; (3) Self-Improvement Loop — приватная оперативная память каждого агента (текущий фокус, ошибки, in-progress задачи, бэклог, heartbeat, метрики), которая учится на своих ошибках без смешивания контекстов. Поверх всех трёх систем работает Graphify knowledge graph — автоматически находит связи между страницами, строит Leiden communities, генерирует Beads-style очередь ревью `GRAPH_READY.md` и предоставляет граф через MCP tools, поэтому агенты делают graph query перед grep. Поддерживает мультиагентные сетапы (Claude Code + Codex): мировые факты общие, оперативная память полностью изолирована по агентам. Операции: SETUP, INGEST, QUERY, LINT, GRAPH, MEMORY, CODEX-HOOKS, COMPILE, WING. Triggers: 'ingest', 'add to wiki', 'query wiki', 'lint wiki', 'obsidian memory', 'obsidian wiki', '/obsidian-memory', 'llm wiki', 'knowledge base', 'wiki setup', 'codex hooks', 'codex memory hooks', 'compile', 'create wing', 'person profile', 'project profile', 'knowledge graph', 'graphify', 'graph ready', 'missing links'."
+description: "Создаёт и поддерживает систему постоянной памяти для AI-агентов на базе Obsidian. Скил объединяет три взаимосвязанные системы: (1) LLM Wiki — курируемая база знаний из конспектов, сущностей и концептов, извлечённых из книг, статей и PDF, связанных wikilinks и Maps of Content; (2) MemPalace — слой Wings (профили людей и проектов) и Drawers (неизменяемые логи сессий), которые компилируют накопленный опыт в структурированный контекст; (3) Self-Improvement Loop — приватная оперативная память каждого агента (текущий фокус, ошибки, in-progress задачи, бэклог, heartbeat, метрики), которая учится на своих ошибках без смешивания контекстов. Поверх всех трёх систем работает Graphify knowledge graph — автоматически находит связи между страницами, строит Leiden communities, генерирует Beads-style очередь ревью `GRAPH_READY.md` и предоставляет граф через MCP tools, поэтому агенты делают graph query перед grep. Поддерживает мультиагентные сетапы (Claude Code + Codex): мировые факты общие, оперативная память полностью изолирована по агентам. Операции: SETUP, INGEST, QUERY, LINT, GRAPH, MEMORY, CODEX-HOOKS, COMPILE, WING. Triggers: 'ingest', 'add to wiki', 'query wiki', 'lint wiki', 'obsidian memory', 'obsidian wiki', '/obsidian-memory', 'llm wiki', 'knowledge base', 'wiki setup', 'codex hooks', 'codex memory hooks', 'compile', 'create wing', 'person profile', 'project profile', 'knowledge graph', 'graphify', 'graph ready', 'missing links'."
 ---
 
 # Obsidian Memory — LLM Wiki + Agent Memory System
@@ -25,10 +25,10 @@ vault/
 │   ├── concepts/         # Methodologies, frameworks, ideas
 │   ├── synthesis/        # Cross-source analysis, answers to questions
 │   ├── domains/          # Maps of Content — thematic hubs
-│   ├── wings/            # Person & project profiles — Robby Palace
+│   ├── wings/            # Person & project profiles — MemPalace
 │   │   ├── person-{slug}.md   # Per-person: facts/events/discoveries/preferences/advice
 │   │   └── project-{slug}.md  # Per-project: facts/events/discoveries/preferences/decisions
-│   └── drawers/          # Immutable session logs — Robby Palace
+│   └── drawers/          # Immutable session logs — MemPalace
 │       └── drawer-YYYY-MM-DD-{slug}.md
 ├── memory/               # Agent operational context (Claude manages)
 │   ├── memory_active.md  # Current focus — max 15 lines, always load first

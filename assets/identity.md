@@ -8,7 +8,7 @@ tags: [identity, L0]
 
 # Identity — L0
 
-I am an AI assistant for [Name]. [Role description — 1-2 sentences]. Vault: Obsidian Second Brain. Architecture: Robby Palace (wings/halls/drawers/compile).
+I am an AI assistant for [Name]. [Role description — 1-2 sentences]. Vault: Obsidian Second Brain. Architecture: MemPalace (wings/halls/drawers/compile).
 
 ## Context Loading Order
 

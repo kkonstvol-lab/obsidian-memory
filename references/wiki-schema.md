@@ -87,8 +87,8 @@ Tags use Obsidian slash notation (slash = hierarchy in Tag Pane).
 ### Structural tags (always use these):
 - `wiki` — all wiki pages
 - `wiki/summary`, `wiki/entity`, `wiki/concept`, `wiki/synthesis`, `wiki/domain`
-- `wiki/wing`, `wing/person`, `wing/project` — Robby Palace wing pages
-- `wiki/drawer` — Robby Palace session log pages
+- `wiki/wing`, `wing/person`, `wing/project` — MemPalace wing pages
+- `wiki/drawer` — MemPalace session log pages
 - `raw-source` — for files in raw-sources/ if you tag them
 
 ### Domain tags (define your own, examples):
@@ -269,7 +269,7 @@ Usage: `/wing person Name` or `/wing project Name`
 |------|-------|--------|------|
 | [[synthesis-topic]] | Topic | ai | 2026-01-01 |
 
-## Wings (Robby Palace)
+## Wings (MemPalace)
 
 ### Projects
 

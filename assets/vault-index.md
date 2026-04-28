@@ -39,7 +39,7 @@ Catalog of all wiki pages. Updated on every INGEST operation.
 |------|--------|------|
 | — | — | — |
 
-## Wings (Robby Palace)
+## Wings (MemPalace)
 
 ### Projects
 

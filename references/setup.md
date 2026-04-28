@@ -40,8 +40,8 @@ vault/
 │   ├── concepts/
 │   ├── synthesis/
 │   ├── domains/
-│   ├── wings/          ← Robby Palace: person and project profiles
-│   └── drawers/        ← Robby Palace: immutable session logs
+│   ├── wings/          ← MemPalace: person and project profiles
+│   └── drawers/        ← MemPalace: immutable session logs
 ├── memory/
 │   ├── projects/
 │   └── graph/
@@ -342,7 +342,7 @@ Write the initialization entry in `wiki/log.md`:
 - Created: wiki/CLAUDE.md, wiki/index.md, wiki/log.md
 - Created: identity.md (L0 context)
 - Created: templates/ (8 templates: 5 wiki + wing-person + wing-project + drawer)
-- Notes: LLM Wiki + Agent Memory + Robby Palace system deployed.
+- Notes: LLM Wiki + Agent Memory + MemPalace system deployed.
 ```
 
 ---
@@ -352,7 +352,7 @@ Write the initialization entry in `wiki/log.md`:
 Your vault now has:
 - ✅ Wiki layer for accumulated knowledge (INGEST, QUERY, LINT)
 - ✅ Memory layer for agent operational context (load order, routing)
-- ✅ Robby Palace layer for person and project profiles (wings + drawers)
+- ✅ MemPalace layer for person and project profiles (wings + drawers)
 - ✅ Output layer for regeneratable dashboards and reports
 - ✅ Templates for all 8 page types (5 wiki + wing-person + wing-project + drawer)
 - ✅ Identity file for L0 context loaded every session
@@ -362,4 +362,4 @@ Your vault now has:
 
 **Next step:** Start your first INGEST. Pick a book, article, or PDF you've read recently and process it into the wiki. See the INGEST workflow in SKILL.md.
 
-**Start using Robby Palace:** At the end of your first significant session, run `/session-summary` — it will create a drawer automatically. Then run `/compile` to push the session data into wings.
+**Start using MemPalace:** At the end of your first significant session, run `/session-summary` — it will create a drawer automatically. Then run `/compile` to push the session data into wings.

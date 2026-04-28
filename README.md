@@ -1,6 +1,6 @@
 # obsidian-memory
 
-Скил для Claude Code и Codex-style агентов — система постоянной памяти для AI-агентов на базе Obsidian. Объединяет LLM Wiki, Robby Palace, Self-Improvement Loop, optional Codex hooks и Graphify knowledge graph в единый контур.
+Скил для Claude Code и Codex-style агентов — система постоянной памяти для AI-агентов на базе Obsidian. Объединяет LLM Wiki, MemPalace, Self-Improvement Loop, optional Codex hooks и Graphify knowledge graph в единый контур.
 
 **Claude — программист. Obsidian — IDE. Wiki — кодовая база.**
 
@@ -16,7 +16,7 @@
 - Организация по доменам → тематические Maps of Content
 - Еженедельный LINT → битые ссылки, сироты, устаревший контент
 
-**Robby Palace** (`wiki/wings/` + `wiki/drawers/`) — постоянная память о людях и проектах:
+**MemPalace** ([original](https://github.com/MemPalace), `wiki/wings/` + `wiki/drawers/`) — постоянная память о людях и проектах:
 - Wing для любого человека или проекта → 5 залов: Facts, Events, Discoveries, Preferences, Advice/Decisions
 - Каждая сессия создаёт неизменяемый Drawer (лог сессии) → COMPILE обновляет Wings автоматически
 - Провенанс: каждый факт в Wing ссылается на исходный Drawer
@@ -175,7 +175,7 @@ vault/
 │   ├── concepts/           ← фреймворки, методологии
 │   ├── synthesis/          ← кросс-источниковый анализ
 │   ├── domains/            ← тематические хабы (Maps of Content)
-│   ├── wings/              ← Robby Palace: профили людей и проектов
+│   ├── wings/              ← MemPalace: профили людей и проектов
 │   │   ├── person-{slug}.md
 │   │   └── project-{slug}.md
 │   └── drawers/            ← неизменяемые логи сессий
@@ -292,4 +292,4 @@ python tests/test_graphify_beads.py
 
 ---
 
-Создан из production-использования. Вдохновлён LLM Wiki pattern (Tobi Lutke / Karpathy), MemPalace (Milla Jovovich) и ALIVE memory system (witcheer).
+Создан из production-использования. Вдохновлён LLM Wiki pattern (Tobi Lutke / Karpathy), MemPalace ([original](https://github.com/MemPalace)) и ALIVE memory system (witcheer).
