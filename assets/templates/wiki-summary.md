@@ -4,19 +4,20 @@ type: summary
 created: {{date}}
 updated: {{date}}
 source_file: ""
-source_type: pdf | article | video | book | conversation | note
+source_type: pdf | docx | article | video | book | conversation | note | unknown
 source_author: ""
+source_id: ""
+source_sha256: ""
+source_size_bytes:
+source_local_cache: ""
+source_availability: local_macbook | missing | optional_external
+source_archive_status: local_verified | local_missing | blocked_zero_byte | optional_external_uploaded
 domain: []
 tags:
   - wiki
   - wiki/summary
 status: active
 confidence: high
-valid_from: {{date}}
-valid_to:
-supersedes:
-superseded_by:
-source: ""
 ---
 
 # {{title}}
@@ -26,6 +27,8 @@ source: ""
 - **Author:** 
 - **Type:** 
 - **Original:** 
+- **Source ID:**
+- **Local cache:**
 
 ## Key Ideas
 
@@ -37,14 +40,6 @@ source: ""
 
 
 
-## Source Evidence
-
-- Verbatim source:
-- Key quote / excerpt:
-  >
-- Evidence links:
-  -
-
 ## Extracted Entities
 
 - 
@@ -54,5 +49,3 @@ source: ""
 - 
 
 ## Conclusions
-
--

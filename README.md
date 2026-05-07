@@ -1,310 +1,137 @@
 # obsidian-memory
 
-Скил для Claude Code и Codex-style агентов — система постоянной памяти для AI-агентов на базе Obsidian. Объединяет LLM Wiki, MemPalace, Self-Improvement Loop, optional Codex hooks и Graphify knowledge graph в единый контур.
+An explicit-only skill for building and operating an Obsidian-based LLM wiki plus agent memory system.
 
-**Claude — программист. Obsidian — IDE. Wiki — кодовая база.**
+**The agent is the operator. Obsidian is the IDE. The wiki is the codebase.**
 
----
-
-## Что делает
-
-Четыре взаимосвязанные системы внутри одного vault:
-
-**LLM Wiki** (`wiki/`) — накапливаемая база знаний:
-- Ingest любого источника (PDF, статья, книга, разговор) → структурированная страница-конспект
-- Извлечение сущностей и концептов → связанные страницы через wikilinks
-- Организация по доменам → тематические Maps of Content
-- Еженедельный LINT → битые ссылки, сироты, устаревший контент
-
-**MemPalace** ([original](https://github.com/MemPalace), `wiki/wings/` + `wiki/drawers/`) — постоянная память о людях и проектах:
-- Wing для любого человека или проекта → 5 залов: Facts, Events, Discoveries, Preferences, Advice/Decisions
-- Каждая сессия создаёт неизменяемый Drawer (лог сессии) → COMPILE обновляет Wings автоматически
-- Провенанс: каждый факт в Wing ссылается на исходный Drawer
-- Verbatim-first, temporal validity, hybrid retrieval и precompact autosave — без внедрения MemPalace runtime/ChromaDB/SQLite как source of truth
-
-**Self-Improvement Loop** (`{private}/memory_corrections.md` + 3 файла) — агент учится на ошибках:
-- Логировать каждую логическую/процессную ошибку → обнаруживать паттерны
-- Трекать идеи улучшений → внедрять в скилы
-- Ежедневный HEARTBEAT cron в 10:00 → читает corrections, поверхностно выявляет паттерны, остаётся калиброванным
-
-**Codex Hooks** (`assets/codex/hooks/`) — optional lifecycle-интеграция Codex с Obsidian:
-- `SessionStart` загружает bounded operational context из vault
-- `PostToolUse` после `git push` напоминает обновить `memory_in_progress.md`
-- `precompact-autosave.js` создаёт non-canonical draft drawer перед сжатием/завершением сессии
-- Источник правды — Obsidian memory, не GitHub Issues
-
-**Graphify Knowledge Graph** (`memory/graph/`) — семантический слой поверх Wiki:
-- Автоматически извлекает связи между страницами через wikilinks → граф (NetworkX)
-- Leiden-кластеризация → тематические communities → кандидаты на новые MOC
-- Beads-style очередь ревью `GRAPH_READY.md`: готовые действия, блокеры, решения человека
-- MemPalace-derived проверки: orphan claims без evidence, temporal conflicts, `derived_from`/`supersedes`/`valid_during`
-- `hybrid_retrieval.py` генерирует `retrieval_candidates.jsonl` как производный scored candidate report
-- Устойчивые IDs для узлов, связей и предложений; `review-state.jsonl` для accepted/skipped/obsolete
-- MCP-сервер graphify → агенты делают `query_graph` перед grep
-- Скрипты не редактируют `wiki/` и `raw-sources/`, только генерируют отчёты
+This skill is based on production use of a markdown-first knowledge system: Git stores canonical wiki/memory artifacts, while heavy RAW binaries can stay in a local cache with provenance.
 
 ---
 
-## Мультиагентный сетап (Claude Code + Codex)
+## What It Does
 
-Скил поддерживает работу нескольких агентов из одного vault без смешивания контекстов:
+**LLM Wiki** (`wiki/`) — an accumulated knowledge base that grows with every source:
 
-```
-vault/
-├── 12-shared/    ← мировые факты (decisions, projects, clients, tools) — оба агента
-├── 12-claude/    ← приватная оперативка Claude Code
-├── 12-codex/     ← приватная оперативка Codex
-└── wiki/         ← база знаний — общая, оба агента
-```
+- Ingest PDF/article/book/conversation sources into structured summaries.
+- Extract durable entities and concepts into linked pages.
+- Organize knowledge by domain Maps of Content.
+- Create synthesis pages only when they are useful and approved.
+- Lint links, frontmatter, index drift, and unprocessed sources.
 
-Каждый агент читает свой entry-point (`CLAUDE.md` или `AGENTS.md`), узнаёт `agent_id` и пути к своему `{private}` и общему `{shared}`. Self-Improvement Loop работает независимо для каждого — ошибки Codex не попадают в heartbeat Claude и наоборот.
+**Agent Memory** (`12-shared/` + `12-{agent}/`) — operational context that persists across sessions:
 
-Codex может дополнительно использовать lifecycle hooks из `assets/codex/hooks/`, чтобы подтягивать свой `{private}/memory_in_progress.md` на старте новой сессии и получать напоминание обновить Obsidian memory после `git push`.
+- `12-shared/` stores durable shared decisions, routing, and optional scripts.
+- `12-codex/`, `12-claude/`, or another `12-{agent}/` store private memory per agent.
+- Private context stays isolated; shared decisions are append-only and attributed.
 
-Для одного агента: используй `memory/` как единый корень, мультиагентное разделение опционально.
+**RAW + Provenance Safety** (`raw-sources/`) — source traceability without bloating Git:
+
+- `raw-sources/converted/` stores converted markdown and is Git-safe.
+- `raw-sources/provenance/` stores manifests and source identity.
+- `raw-sources/pdfs/` and `raw-sources/00 RAW INBOX/` can stay local and Git-ignored.
+- RAW files are tracked by hash, size, path, availability, and converted/wiki links.
 
 ---
 
-## Установка
+## Install
 
 ```bash
 git clone https://github.com/kkonstvol-lab/obsidian-memory ~/.claude/skills/obsidian-memory
 ```
 
-Перезапустить Claude Code. Скил доступен как `/obsidian-memory`.
-
-### Optional: Codex hooks
-
-Codex-интеграция устанавливается отдельно, потому что Codex hooks являются experimental:
+or install into another agent skills directory:
 
 ```bash
-mkdir -p ~/.codex/hooks
-cp assets/codex/hooks/codex-session-start.js ~/.codex/hooks/
-cp assets/codex/hooks/codex-post-tool-use.js ~/.codex/hooks/
-cp assets/codex/hooks/precompact-autosave.js ~/.codex/hooks/
-cp assets/codex/hooks/hooks.json.template ~/.codex/hooks.json
-cp assets/codex/memory_in_progress.md /path/to/obsidian-vault/12-codex/memory_in_progress.md
+git clone https://github.com/kkonstvol-lab/obsidian-memory ~/.agents/skills/obsidian-memory
 ```
 
-Задать vault path:
-
-```bash
-export OBSIDIAN_VAULT_PATH="/path/to/obsidian-vault"
-export OBSIDIAN_AGENT_ID="codex"
-```
-
-Подробнее: `references/codex-hooks.md`.
+Restart the agent app. The skill will be available as `obsidian-memory` when explicitly invoked or when the user asks to work with an Obsidian vault/wiki/memory system.
 
 ---
 
-## Быстрый старт
+## Quick Start
 
-1. **Настроить vault** — следовать `references/setup.md`
-2. **Добавить схему** — скопировать `assets/vault-CLAUDE.md` → `wiki/CLAUDE.md` в vault
-3. **Скопировать шаблоны** — `assets/templates/` → `templates/` в vault
-4. **Настроить identity** — скопировать `assets/identity.md` → `identity.md` в корень vault, заполнить имя и роль
-5. **Первый ingest** — "ingest [название источника] в мой wiki"
-6. **Первый session-summary** — в конце сессии `/session-summary` → создаёт Drawer → `/compile` → обновляет Wings
+1. Follow `references/setup.md`.
+2. Copy `assets/vault-CLAUDE.md` to `wiki/CLAUDE.md` or adapt it into `AGENTS.md`.
+3. Copy `assets/templates/` to your vault's `templates/`.
+4. Create `12-shared/` and one `12-{agent}/` private memory folder per agent.
+5. Add a `.gitignore` policy before importing RAW binaries.
+6. Start with a small INGEST or QUERY test.
 
 ---
 
-## Структура файлов скила
+## File Structure
 
-```
+```text
 obsidian-memory/
-├── SKILL.md                     # Главный файл скила — триггеры + все операции
+├── SKILL.md
 ├── references/
-│   ├── wiki-schema.md           # Полная схема wiki: типы страниц, frontmatter, теги, workflows
-│   ├── memory-schema.md         # Memory layer: типы файлов, порядок загрузки, routing
-│   ├── graphify.md              # Graphify + Beads-style review queue
-│   ├── codex-hooks.md           # Optional Codex hooks для Obsidian memory
-│   └── setup.md                 # Пошаговая инструкция установки
+│   ├── wiki-schema.md
+│   ├── memory-schema.md
+│   ├── release-safety.md
+│   ├── graphify.md
+│   ├── codex-hooks.md
+│   └── setup.md
 └── assets/
     ├── graph/
-    │   ├── extract_vault.py
-    │   ├── suggest_wikilinks.py
-    │   ├── hybrid_retrieval.py
-    │   ├── review-state.jsonl
-    │   └── tests/
     ├── codex/
-    │   ├── hooks/
-    │   │   ├── codex-session-start.js
-    │   │   ├── codex-post-tool-use.js
-    │   │   ├── precompact-autosave.js
-    │   │   ├── tests/
-    │   │   └── hooks.json.template
-    │   ├── memory_in_progress.md
-    │   └── env.example
-    ├── vault-CLAUDE.md          # Drop-in схема для wiki/CLAUDE.md
-    ├── vault-index.md           # Шаблон wiki/index.md (с секциями Wings + Drawers)
-    ├── vault-log.md             # Шаблон wiki/log.md
-    ├── identity.md              # Шаблон identity.md (L0 контекст)
+    ├── vault-CLAUDE.md
+    ├── vault-index.md
+    ├── vault-log.md
+    ├── identity.md
     └── templates/
-        ├── wiki-summary.md      # Конспект источника
-        ├── wiki-entity.md       # Человек/компания/инструмент
-        ├── wiki-concept.md      # Методология/фреймворк
-        ├── wiki-synthesis.md    # Кросс-источниковый анализ
-        ├── wiki-domain.md       # Map of Content
-        ├── wing-person.md       # Wing человека — 5 залов
-        ├── wing-project.md      # Wing проекта — 5 залов
-        └── drawer.md            # Неизменяемый лог сессии
+        ├── wiki-summary.md
+        ├── wiki-entity.md
+        ├── wiki-concept.md
+        ├── wiki-synthesis.md
+        ├── wiki-domain.md
+        ├── drawer.md
+        ├── wing-person.md
+        └── wing-project.md
 ```
 
 ---
 
-## Операции
+## Optional Extensions
 
-| Операция | Когда использовать |
-|----------|-------------------|
-| SETUP | Первичная инициализация vault |
-| INGEST | Добавить источник в wiki |
-| QUERY | Поиск и синтез знаний (сначала graph query, потом grep) |
-| LINT | Еженедельная проверка (wiki + Palace) |
-| GRAPH | Регенерация knowledge graph после bulk ingest |
-| MEMORY | Загрузка контекста агента в начале сессии |
-| CODEX-HOOKS | Optional Codex lifecycle hooks для Obsidian memory |
-| COMPILE | После сессии — обработать Drawers в Wings |
-| WING | Создать Wing человека или проекта |
+- `references/graphify.md` and `assets/graph/` describe an optional derived knowledge-graph layer. Obsidian markdown remains the source of truth; graph outputs are rebuildable.
+- `references/codex-hooks.md` and `assets/codex/` describe optional Codex lifecycle hooks. Treat hooks as runtime-dependent and verify they actually run before relying on automatic behavior.
+- `assets/templates/drawer.md`, `wing-person.md`, and `wing-project.md` preserve MemPalace-style memory patterns for vaults that use wings/drawers.
 
 ---
 
-## Структура vault после настройки
+## Operations
 
-```
-vault/
-├── identity.md             ← L0 контекст, каждая сессия (~100 токенов)
-├── AGENTS.md               ← entry point для второго агента (опционально)
-├── wiki/
-│   ├── CLAUDE.md           ← схема (из assets/vault-CLAUDE.md)
-│   ├── index.md            ← каталог всех страниц
-│   ├── log.md              ← лог операций
-│   ├── summaries/          ← один файл на источник
-│   ├── entities/           ← люди, компании, инструменты (что это ЕСТЬ)
-│   ├── concepts/           ← фреймворки, методологии
-│   ├── synthesis/          ← кросс-источниковый анализ
-│   ├── domains/            ← тематические хабы (Maps of Content)
-│   ├── wings/              ← MemPalace: профили людей и проектов
-│   │   ├── person-{slug}.md
-│   │   └── project-{slug}.md
-│   └── drawers/            ← неизменяемые логи сессий
-├── output/
-│   ├── dashboards/
-│   └── reports/
-├── memory/                 ← одиночный агент
-│   ├── memory_active.md
-│   ├── memory_in_progress.md
-│   ├── memory_decisions.md
-│   ├── memory_corrections.md
-│   ├── memory_improvements_backlog.md
-│   ├── memory_metrics.md
-│   ├── memory_heartbeat.md
-│   └── graph/              ← graphify knowledge graph
-│       ├── extract_vault.py
-│       ├── suggest_wikilinks.py
-│       ├── hybrid_retrieval.py
-│       ├── review-state.jsonl
-│       ├── tests/
-│       └── graphify-out/
-│           ├── graph.json        (git-ignored)
-│           ├── GRAPH_REPORT.md
-│           ├── GRAPH_READY.md
-│           └── missing-links.md
-└── raw-sources/
-    ├── pdfs/
-    ├── articles/
-    └── converted/
-```
-
-**Мультиагентный вариант** — вместо единого `memory/` используется:
-```
-12-shared/    ← memory_decisions, memory_projects, memory_tools, graph/
-12-claude/    ← memory_active, memory_in_progress, memory_corrections, memory_heartbeat, ...
-12-codex/     ← то же, отдельно
-```
+| Operation | When to use |
+|-----------|-------------|
+| SETUP | First-time vault initialization |
+| INGEST | Add and process a source |
+| QUERY | Search and synthesize knowledge |
+| LINT | Check wiki health |
+| MEMORY | Load or update agent context |
+| RELEASE | Verify provenance, RAW guard, and Git safety before push |
 
 ---
 
-## Ключевые принципы
+## Key Principles
 
-1. **Writes required** — каждая сессия, которая читает, должна что-то записать
-2. **Separation** — wiki = знания, memory = оперативный контекст, никогда не дублировать
-3. **Quality > quantity** — 5 связанных страниц лучше 20 изолированных
-4. **Compound context** — каждая сессия делает следующую быстрее
-5. **Corrections > rules** — конкретные логи ошибок сильнее абстрактных инструкций
-6. **Drawers immutable** — логи сессий не редактируются после создания
-7. **Entity vs Wing** — entity = что это ЕСТЬ; wing = ваши отношения с этим
-8. **Graph before grep** — при QUERY сначала `query_graph`, потом файловый поиск
-9. **Private isolation** — в мультиагентном сетапе ошибки и heartbeat каждого агента хранятся отдельно
-10. **Verbatim-first** — важные выводы ссылаются на raw source, drawer или session artifact
-11. **Temporal append-only** — новые факты/решения supersede старые, а не затирают их
-12. **Drafts are not memory** — precompact autosave drafts не canonical до review/session-summary
+1. **Explicit-only:** do not touch the vault unless the user asked for vault/wiki/memory work.
+2. **Evidence-first:** wiki answers should cite the pages or converted sources used.
+3. **Synthesis by approval:** propose durable synthesis pages when useful; create after approval or direct request.
+4. **Private memory isolation:** never mix `12-codex/`, `12-claude/`, or other agent-private context.
+5. **Markdown is canonical:** Git should contain wiki, converted markdown, provenance, scripts, docs, and routing.
+6. **RAW is usually local:** PDF/DOCX/ZIP files can stay outside Git while still being tracked in provenance.
+7. **No performative writes:** write when it improves future retrieval, traceability, or safety, not just because a file was read.
 
 ---
 
-## Self-Improvement Loop
+## Requirements
 
-Четыре файла, которые работают вместе:
-
-| Файл | Назначение | Кто пишет |
-|------|-----------|-----------|
-| `memory_corrections.md` | Логические/процессные ошибки (не стиль) | Правки пользователя + session-summary |
-| `memory_improvements_backlog.md` | Идеи улучшений (Active/Done) | HEARTBEAT + session-summary |
-| `memory_metrics.md` | Еженедельный снапшот | HEARTBEAT каждое воскресенье |
-| `memory_heartbeat.md` | Ежедневный self-check лог | HEARTBEAT cron в 10:00 |
-
-**Уровни эскалации:** `memory_corrections.md` (открытая ошибка) → при `repeat_count >= 2` → `memory_decisions.md` (дурное правило) → при следующем agent-introspection → `CLAUDE.md` (часть identity агента).
-
-**HEARTBEAT cron:** создаётся через `mcp__scheduled-tasks__create_scheduled_task` с `cronExpression: "0 10 * * *"`. Читает corrections, выявляет повторяющиеся паттерны (2+ одинаковых root cause), флагирует застойные backlog items.
+- Obsidian.
+- An agent environment with skills support.
+- Recommended Obsidian plugins: Dataview, Templater, Obsidian Git.
+- Optional MCP or filesystem access for direct vault operations.
 
 ---
 
-## Graphify Knowledge Graph
-
-Опциональный слой, который добавляет semantic search поверх wiki:
-
-```bash
-# Установка
-pip install graphifyy
-
-# Скопировать bundled graph layer
-cp -R assets/graph/* /path/to/vault/memory/graph/
-
-# Регенерация графа
-cd /path/to/vault/memory/graph
-python extract_vault.py
-python suggest_wikilinks.py
-python hybrid_retrieval.py "current project priorities"
-
-# Проверка
-python tests/test_graphify_beads.py
-
-# Добавить MCP-сервер в ~/.claude.json
-{
-  "mcpServers": {
-    "graphify": {
-      "command": "python",
-      "args": ["-m", "graphify.serve", "memory/graph/graphify-out/graph.json"],
-      "type": "stdio"
-    }
-  }
-}
-```
-
-После этого агент может использовать `mcp__graphify__query_graph` для семантических запросов к графу перед тем как делать grep по файлам.
-
-`GRAPH_READY.md` — это очередь человеческого ревью. Принятые/отклонённые решения фиксируются в `review-state.jsonl`, а не ручной правкой generated reports. Подробнее: `references/graphify.md`.
-
-`retrieval_candidates.jsonl` — производный hybrid retrieval report. Он учитывает keyword overlap, person/project boost, recency и source quality; Markdown vault остаётся источником истины.
-
----
-
-## Требования
-
-- Claude Code со поддержкой скилов
-- Для Codex hooks: Codex runtime с включённой experimental hooks support; по официальной документации Windows support сейчас временно отключён
-- Obsidian с плагинами Dataview + Templater
-- Опционально: obsidian-git (синхронизация между устройствами), mcpvault (MCP доступ к vault), graphify (knowledge graph)
-
----
-
-Создан из production-использования. Вдохновлён LLM Wiki pattern (Tobi Lutke / Karpathy), MemPalace ([original](https://github.com/MemPalace)) и ALIVE memory system (witcheer).
+Built from production use. Inspired by Tobi Lutke's LLM Wiki pattern and long-running agent memory systems.

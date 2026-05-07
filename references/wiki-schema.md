@@ -1,15 +1,6 @@
 # Wiki Schema — Detailed Reference
 
-Full specification for the `wiki/` knowledge layer. This file extends the SKILL.md operations with complete detail.
-
-Obsidian Markdown is the canonical source of truth. Graphs, retrieval reports, indexes, and autosave drafts are derived or reviewable artifacts.
-
-MemPalace-derived practices in this schema:
-
-- **Verbatim-first:** important claims link to raw sources, drawers, or session artifacts.
-- **Temporal validity:** decisions, facts, and project/client state can declare `valid_from`, `valid_to`, `supersedes`, and `superseded_by`.
-- **Hybrid retrieval:** QUERY starts with graph/retrieval candidates, then file search, then source reading.
-- **Precompact autosave:** drafts are non-canonical until reviewed by `/session-summary` or COMPILE.
+The wiki layer stores accumulated knowledge from sources. It should be linked, searchable, provenance-aware, and safe to synchronize through Git.
 
 ---
 
@@ -17,26 +8,21 @@ MemPalace-derived practices in this schema:
 
 | Type | Folder | Naming | Purpose |
 |------|--------|--------|---------|
-| summary | `wiki/summaries/` | `summary-{slug}.md` | Digest of a single source |
-| entity | `wiki/entities/` | `{name}.md` | Person, company, tool, product — what it IS |
+| summary | `wiki/summaries/` | `summary-{slug}.md` | Digest of one source |
+| entity | `wiki/entities/` | `{name}.md` | Person, company, tool, product |
 | concept | `wiki/concepts/` | `{name}.md` | Methodology, framework, idea |
-| synthesis | `wiki/synthesis/` | `synthesis-{topic}.md` | Cross-source analysis or answer |
-| domain | `wiki/domains/` | `domain-{name}.md` | Map of Content — thematic hub |
-| wing | `wiki/wings/` | `person-{slug}.md` / `project-{slug}.md` | Your relationship with a person or project (5 halls) |
-| drawer | `wiki/drawers/` | `drawer-YYYY-MM-DD-{slug}.md` | Immutable session log — never edit after creation |
+| synthesis | `wiki/synthesis/` | `synthesis-{topic}.md` | Cross-source answer or analysis |
+| domain | `wiki/domains/` | `domain-{name}.md` | Map of Content |
 
-**Entity vs Wing distinction:** An entity captures *what something is* (Anthropic = AI safety company). A wing captures *your relationship with it* (project-anthropic-integration = timeline of your work with them). Don't duplicate between them — cross-link instead.
+Slug format: lowercase, hyphens instead of spaces, no special characters unless the vault explicitly supports them.
 
-**Slug format:** lowercase, hyphens instead of spaces, no special characters.
-Examples: `summary-atomic-habits.md`, `summary-ycombinator-startup-manual.md`
-
-**Entity rule:** Only create a separate entity file if the entity is mentioned across 2+ different sources. For a single mention — keep inline in the summary.
+Entity rule: create a separate entity file only when the entity appears in two or more sources or is strategically important. Otherwise mention it inline.
 
 ---
 
 ## Frontmatter Standard
 
-Every wiki page must have this frontmatter:
+Every wiki page:
 
 ```yaml
 ---
@@ -46,221 +32,201 @@ created: YYYY-MM-DD
 updated: YYYY-MM-DDTHH:MM
 domain:
   - ai
-  - marketing
 status: active | draft | stale
 confidence: high | medium | low
-valid_from: YYYY-MM-DD
-valid_to:
-supersedes:
-superseded_by:
-source: ""
 tags:
   - wiki
-  - wiki/summary      # replace with wiki/{type}
-  - domain/ai         # replace with domain/{your-domain}
+  - wiki/summary
+  - domain/ai
 ---
 ```
 
-### Additional fields for summary:
+### Summary Source Fields
 
 ```yaml
 source_file: "[[raw-sources/converted/filename]]"
-source_type: pdf | article | video | book | conversation | note
+source_type: pdf | docx | article | video | book | conversation | note | unknown
 source_author: "Author Name"
+source_id: "sha256:<hash>"
+source_sha256: "<hash>"
+source_size_bytes: 12345
+source_local_cache: "raw-sources/pdfs/source.pdf"
+source_availability: local_macbook | missing | optional_external
+source_archive_status: local_verified | local_missing | blocked_zero_byte | optional_external_uploaded
 ```
 
-### Additional field for entity:
+### Converted Markdown Source Fields
+
+Converted markdown in `raw-sources/converted/` should also carry source fields:
 
 ```yaml
-entity_type: person | company | tool | product
+---
+title: "Converted Source Title"
+type: converted-source
+source_id: "sha256:<hash>"
+source_sha256: "<hash>"
+source_size_bytes: 12345
+source_local_cache: "raw-sources/pdfs/source.pdf"
+source_availability: local_macbook | missing | optional_external
+source_archive_status: local_verified | local_missing | blocked_zero_byte | optional_external_uploaded
+converted_at: YYYY-MM-DDTHH:MM
+---
 ```
 
-### Additional fields for wing:
+### Entity Fields
 
 ```yaml
-wing_type: person | project
-relationship: client | mentor | contact | colleague | partner  # person only
-client: "[[person-slug]]"  # project only
+entity_type: person | company | tool | product | project | source
 ```
 
-### Additional fields for drawer:
+---
 
-```yaml
-session_date: YYYY-MM-DD
-compiled: false | true
-wings_updated: []  # filled after COMPILE — list of wing files updated
-status: locked    # always locked — drawers are immutable
-agent_id: codex | claude | other
+## Provenance Manifest
+
+Recommended manifest path:
+
+```text
+raw-sources/provenance/raw-local-manifest.jsonl
 ```
+
+One JSONL row per RAW source:
+
+```json
+{
+  "source_id": "sha256:<hash>",
+  "source_filename": "source.pdf",
+  "source_type": "pdf",
+  "sha256": "<hash>",
+  "size_bytes": 12345,
+  "local_cache_path": "raw-sources/pdfs/source.pdf",
+  "source_availability": "local_macbook",
+  "archive_status": "local_verified",
+  "external_archive_uri": "",
+  "converted_path": "raw-sources/converted/source.md",
+  "wiki_summary_path": "wiki/summaries/summary-source.md",
+  "import_batch_id": "YYYYMMDDTHHMMSS",
+  "updated_at": "YYYY-MM-DDTHH:MM"
+}
+```
+
+Use `blocked_zero_byte` for zero-byte files. Do not treat them as valid sources until replaced.
 
 ---
 
 ## Tag Taxonomy
 
-Tags use Obsidian slash notation (slash = hierarchy in Tag Pane).
+Structural tags:
 
-### Structural tags (always use these):
-- `wiki` — all wiki pages
-- `wiki/summary`, `wiki/entity`, `wiki/concept`, `wiki/synthesis`, `wiki/domain`
-- `wiki/wing`, `wing/person`, `wing/project` — MemPalace wing pages
-- `wiki/drawer` — MemPalace session log pages
-- `raw-source` — for files in raw-sources/ if you tag them
+- `wiki`
+- `wiki/summary`
+- `wiki/entity`
+- `wiki/concept`
+- `wiki/synthesis`
+- `wiki/domain`
 
-### Domain tags (define your own, examples):
-- `domain/ai` — AI, LLMs, agents, prompts
-- `domain/marketing` — marketing, positioning, SEO, funnels
-- `domain/business` — strategy, growth, operations
-- `domain/learning` — books, courses, skill development
-- `domain/engineering` — code, architecture, DevOps
-- `domain/psychology` — behavior, habits, decision-making
-- `domain/personal` — personal development, health, relationships
+Domain tags are user-defined:
 
-**Domain tags are user-defined** — create the domains that match your knowledge areas.
+- `domain/ai`
+- `domain/marketing`
+- `domain/business`
+- `domain/learning`
+- `domain/engineering`
 
-### Status tags (optional):
-- `status/draft` — incomplete, needs work
-- `status/active` — current and maintained
-- `status/stale` — older than 90 days, may need review
+Status tags are optional:
+
+- `status/draft`
+- `status/active`
+- `status/stale`
 
 ---
 
-## INGEST — Detailed Workflow
+## INGEST Workflow
 
-1. **Place source** in `raw-sources/` (PDFs → `pdfs/`, saved articles → `articles/`)
-2. **Convert PDF** if needed: use any PDF-to-markdown tool → `raw-sources/converted/{slug}.md`
-3. **Read source** in full before writing anything
-4. **Create summary** at `wiki/summaries/summary-{slug}.md`:
-   - Use the `wiki-summary` template
-   - Key ideas: 3–7 bullet points, most important insights
-   - Detailed digest: organized by the source's structure
-   - Extracted entities: list what should become entity pages
-   - Related concepts: list what should become concept pages
-   - Conclusions: your interpretation, what this means for your domains
-   - Source Evidence: verbatim source link, key quote/excerpt, evidence links
-5. **Create/update entities** in `wiki/entities/`:
-   - Only for entities appearing in 2+ sources
-   - Add incoming link from the summary: `[[entity-name]]`
-6. **Create/update concepts** in `wiki/concepts/`:
-   - Each concept gets its own file
-   - Add incoming link from the summary
-7. **Update domain MOC** in `wiki/domains/domain-{name}.md`:
-   - Add the new summary to the Summaries section
-   - Add any new concepts to the Concepts section
-   - Add any new entities to the Entities section
-   - Create the domain file if it doesn't exist yet
-8. **Update `wiki/index.md`**:
-   - Add row in the Summaries table
-   - Add rows for any new entities/concepts
-9. **Append to `wiki/log.md`**:
-   ```
-   ## YYYY-MM-DDTHH:MM — INGEST | Source Name
-   - Source: [what it is]
-   - Created: [new files]
-   - Updated: [modified files]
-   - Notes: [context, discoveries, decisions]
-   ```
+1. Place RAW source in local cache or intake.
+2. Compute `sha256`, size, normalized filename, and target paths.
+3. Update provenance manifest.
+4. Convert the source to `raw-sources/converted/{slug}.md`.
+5. Add source frontmatter to converted markdown.
+6. Read converted/source content before writing wiki pages.
+7. Create `wiki/summaries/summary-{slug}.md`.
+8. Create or update entities only when justified.
+9. Create or update concepts for durable ideas/frameworks.
+10. Update relevant domain MOCs.
+11. Update `wiki/index.md`.
+12. Append to `wiki/log.md`.
+
+Conflict policy:
+
+- Identical target exists: skip or reuse.
+- Same filename, different hash: quarantine/report; do not overwrite.
+- Zero-byte/invalid/unsafe: quarantine/report; do not ingest as valid source.
 
 ---
 
-## QUERY — Detailed Workflow
+## QUERY Workflow
 
-1. **Graph/retrieval first:** Use graph query or `graphify-out/retrieval_candidates.jsonl` if available.
-2. **Orient:** Read `wiki/CLAUDE.md` (if not in context) to understand the schema.
-3. **Navigate:** Read `wiki/index.md` to find relevant domains and page types.
-4. **Search:** Grep across `wiki/` for relevant terms, concepts, entities.
-5. **Read:** Load the most relevant pages plus their verbatim evidence (`raw-sources/`, `wiki/drawers/`).
-6. **Synthesize:** Construct the answer, citing sources with `[[wikilinks]]` and listing `Used Evidence`.
-7. **Save synthesis** (if valuable): Create `wiki/synthesis/synthesis-{topic}.md`
-   - Use the `wiki-synthesis` template
-   - Include: question/theme, sources used, analysis, conclusions
-7. **Log:** Append QUERY entry to `wiki/log.md`
+1. Orient with `wiki/CLAUDE.md` or `AGENTS.md`.
+2. Read `wiki/index.md`.
+3. Search relevant wiki pages and converted markdown.
+4. Read the strongest evidence pages.
+5. Answer in natural language with a short evidence section.
+6. If the topic is recurring, strategic, or assembled from several sources, propose a synthesis page.
+7. Create synthesis only after user approval or direct instruction.
+8. Log the QUERY when it produces a durable wiki change or an important research trail.
 
----
+Suggested answer shape:
 
-## LINT — Checklist
+```markdown
+## Answer
+[direct answer]
 
-Run weekly or before major work sessions. Check each item:
+## Used Evidence
+- [[page-one]]
+- [[page-two]]
 
-| Check | How | Fix |
-|-------|-----|-----|
-| Broken wikilinks | Search for `[[` patterns, verify each target exists | Update link or create missing page |
-| Orphan pages | Pages with no incoming links (except index.md) | Add link from relevant domain MOC |
-| Incomplete frontmatter | Check for missing required fields | Fill in missing fields |
-| Stale pages | `updated` older than 90 days | Review, update or mark `status: stale` |
-| Unprocessed sources | Files in `raw-sources/converted/` without a summary | Run INGEST for each |
-| Index drift | Wiki pages missing from `wiki/index.md` | Add missing rows to index |
-| Duplicate entities | Two files for the same entity | Merge into one, update all references |
-| Orphan claims | Important claims without raw/drawer/session evidence | Add evidence link or mark as needs review |
-| Temporal conflicts | Active facts with same `claim_id`, different `claim_value`, empty `valid_to` | Review, supersede, or add `valid_to` |
-
-**Palace-specific checks (add to weekly LINT):**
-
-| Check | How | Fix |
-|-------|-----|-----|
-| Uncompiled drawers | Find drawers with `compiled: false` older than 3 days | Run COMPILE |
-| Empty halls | Wing sections with no content, wing > 30 days old | Add or note as not applicable |
-| Tunnel candidates | Entity name appears in 3+ wings without cross-link | Add `[[wikilink]]` to Relations sections |
-| Stale wings by type | Person wings > 60 days, project wings > 30 days without `updated` change | Review, update, or change status |
-| Contradictions | Same fact with different values across wings | Verify with drawer sources, fix the wing with wrong value |
-
-After LINT: write a LINT entry to `wiki/log.md` with findings and what was fixed.
+## Suggested Wiki Upgrade
+[optional synthesis/runbook/index update proposal]
+```
 
 ---
 
-## COMPILE — Workflow Detail
+## Synthesis Criteria
 
-Triggered after `/session-summary` or by running `/compile` manually.
+Create or propose `wiki/synthesis/synthesis-{topic}.md` when:
 
-1. List all files in `wiki/drawers/` — filter those with `compiled: false`
-2. For each uncompiled drawer:
-   - Read full content
-   - Identify people mentioned → map to `person-{slug}` wings
-   - Identify projects mentioned → map to `project-{slug}` wings
-   - Classify each piece of information into a hall:
-     - **Facts** — stable attributes (role, stack, budget, city)
-     - **Events** — dated occurrences (meetings, releases, decisions)
-     - **Discoveries** — insights and learnings
-     - **Preferences** — how to work with them, requirements
-     - **Advice/Decisions** — strategic choices, recommendations
-3. For each wing to update:
-   - Read current wing content
-   - Append new entries to appropriate halls (do not duplicate)
-   - Put active facts in `Current State`; move superseded facts to `History`
-   - Provenance: each new entry ends with `← [[drawer-YYYY-MM-DD-slug]]`
-   - If a new fact replaces an older fact, set temporal metadata (`valid_to`, `supersedes`, `superseded_by`)
-   - Update `updated` in frontmatter
-   - Add drawer to **Source Evidence** section
-4. Mark drawer: `compiled: true`, `wings_updated: [list of wings]`
-5. Update `wiki/index.md` — add any new wings to the Wings tables
-6. Append COMPILE entry to `wiki/log.md`:
-   ```
-   ## YYYY-MM-DDTHH:MM — COMPILE | N drawers processed
-   - Drawers: drawer-YYYY-MM-DD-slug
-   - Wings updated: [list]
-   - Wings created: [list or —]
-   ```
+- the answer combines several sources;
+- the question is likely to recur;
+- the topic is strategic or operationally important;
+- a future agent would otherwise need to reassemble the same evidence;
+- the synthesis can become a decision, runbook, or domain map.
 
-## WING — Creating a Profile
+Do not create synthesis just because a question was answered.
 
-Usage: `/wing person Name` or `/wing project Name`
+---
 
-1. Generate slug: lowercase, hyphens (e.g., `person-john-smith`, `project-acme-redesign`)
-2. Check `wiki/wings/{slug}.md` doesn't already exist
-3. Search existing data for pre-fill:
-   - `wiki/entities/` — for matching entity page
-   - `wiki/summaries/` — for mentions
-   - `memory/memory_clients.md` — for client data
-4. Create from `templates/wing-person.md` or `templates/wing-project.md`
-5. Pre-fill halls from found data; add provenance `← [[source]]`
-6. Update `wiki/index.md` — add row to Wings section
-7. Append WING entry to `wiki/log.md`
+## LINT Checklist
 
-## index.md Structure
+| Check | Fix |
+|-------|-----|
+| Broken wikilinks | Update link or create missing page |
+| Orphan pages | Link from index/domain/related page or mark intentional |
+| Missing frontmatter | Fill required fields |
+| Stale pages | Review, update, or mark stale |
+| Converted without summary | Run INGEST or mark deferred |
+| Index drift | Add missing rows |
+| Duplicate entities | Merge and update references |
+| Provenance gaps | Repair manifest/frontmatter/source links |
+
+After LINT, log findings if they are useful for future operators.
+
+---
+
+## `index.md` Structure
 
 ```markdown
 # Wiki Index
 
-## Domains (Maps of Content)
+## Domains
 
 | File | Description | Pages |
 |------|-------------|-------|
@@ -270,106 +236,52 @@ Usage: `/wing person Name` or `/wing project Name`
 
 | File | Source | Type | Domain | Date |
 |------|--------|------|--------|------|
-| [[summary-example]] | Book Title — Author | book | learning | 2026-01-01 |
+| [[summary-example]] | Source Title | pdf | ai | YYYY-MM-DD |
 
 ## Entities
 
 | File | Type | Domain | Date |
 |------|------|--------|------|
-| [[entity-name]] | company | ai | 2026-01-01 |
+| [[entity-name]] | company | ai | YYYY-MM-DD |
 
 ## Concepts
 
 | File | Domain | Date |
 |------|--------|------|
-| [[concept-name]] | ai | 2026-01-01 |
+| [[concept-name]] | ai | YYYY-MM-DD |
 
 ## Synthesis
 
 | File | Theme | Domain | Date |
 |------|-------|--------|------|
-| [[synthesis-topic]] | Topic | ai | 2026-01-01 |
-
-## Wings (MemPalace)
-
-### Projects
-
-| File | Client | Status | Updated |
-|------|--------|--------|---------|
-| [[project-example]] | [[person-client]] | active | 2026-01-01 |
-
-### People
-
-| File | Relationship | Domain | Updated |
-|------|-------------|--------|---------|
-| [[person-example]] | client | marketing | 2026-01-01 |
-
-## Drawers (Session Logs)
-
-| File | Date | Compiled | Wings Updated |
-|------|------|----------|---------------|
-| [[drawer-2026-01-01-example]] | 2026-01-01 | true | project-example |
-
----
-
-## Dataview (auto-backup)
-
-\`\`\`dataview
-TABLE type AS "Type", status AS "Status", domain AS "Domain", updated AS "Updated"
-FROM "wiki"
-WHERE type != null
-SORT updated DESC
-\`\`\`
+| [[synthesis-topic]] | Topic | ai | YYYY-MM-DD |
 ```
 
 ---
 
-## log.md Format
+## `log.md` Format
 
-Reverse-chronological. Newest entries at the top.
+Newest entries first.
 
 ```markdown
 # Wiki Log
 
-Chronological log of all operations.
-
----
-
 ## YYYY-MM-DDTHH:MM — INGEST | Source Name
 
-- Source: What was ingested (type, author, topic)
-- Created: list of new files
-- Updated: list of modified files
-- Notes: Decisions made, things discovered, context
-
----
+- Source: description
+- Created: files
+- Updated: files
+- Notes: context
 
 ## YYYY-MM-DDTHH:MM — QUERY | Question
 
-- Query: What was asked
+- Query: question
 - Sources used: [[page1]], [[page2]]
-- Synthesis saved: [[synthesis-topic]] (if applicable)
+- Synthesis saved: [[synthesis-topic]] or none
 
----
+## YYYY-MM-DDTHH:MM — LINT | Health check
 
-## YYYY-MM-DDTHH:MM — LINT | Weekly check
-
-- Checked: N pages
-- Fixed: list of issues fixed
-- Remaining: known issues deferred
-
----
-
-## YYYY-MM-DDTHH:MM — COMPILE | N drawers processed
-
-- Drawers: drawer-YYYY-MM-DD-slug
-- Wings updated: person-example, project-example
-- Wings created: —
-
----
-
-## YYYY-MM-DDTHH:MM — WING | Created person-example
-
-- Type: person
-- Pre-filled from: [[entity-example]], [[summary-example]]
+- Checked: scope
+- Fixed: issues
+- Remaining: deferred issues
 ```

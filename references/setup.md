@@ -1,371 +1,221 @@
 # Setup Guide — First-Time Installation
 
-Step-by-step guide to deploy the obsidian-memory system in a new Obsidian vault.
+Use this guide to deploy an Obsidian Memory system in a new vault.
 
 ---
 
 ## Step 1: Obsidian Plugins
 
-Install these in Obsidian Settings → Community Plugins:
+Required:
 
-### Required
+- **Dataview** — query wiki pages by frontmatter.
+- **Templater** — create pages from templates.
 
-**Dataview** — Query your wiki by frontmatter fields. Powers the auto-updating tables in index.md.
-- After install: Enable JavaScript queries in Dataview settings
+Recommended:
 
-**Templater** — Advanced templates with date variables and logic. Powers the `{{date}}` and `{{title}}` placeholders in page templates.
-- After install: Set "Template folder location" to your vault's `templates/` folder
+- **Obsidian Git** — sync markdown vault state through GitHub or another Git remote.
+- **Tag Wrangler** — manage tags in bulk.
 
-### Recommended
-
-**obsidian-git** — Auto-commit and sync vault to GitHub. Essential for multi-device setups (laptop + phone + VPS).
-- Settings: Auto commit every 30 min, Auto pull every 60 min
-- Merge strategy: `ort` (handles divergent branches cleanly)
-
-### Optional
-
-**Tag Wrangler** — Rename, merge, and manage tags in bulk. Useful when you want to reorganize domain tags.
+Configure Git sync only after `.gitignore` is in place, so RAW binaries are not accidentally committed.
 
 ---
 
 ## Step 2: Vault Folder Structure
 
-Create these folders in your vault:
+Create:
 
-```
+```text
 vault/
 ├── wiki/
 │   ├── summaries/
 │   ├── entities/
 │   ├── concepts/
 │   ├── synthesis/
-│   ├── domains/
-│   ├── wings/          ← MemPalace: person and project profiles
-│   └── drawers/        ← MemPalace: immutable session logs
-├── memory/
-│   ├── projects/
-│   └── graph/
-├── output/             ← Regeneratable artifacts (dashboards, reports)
-│   ├── dashboards/
-│   └── reports/
+│   └── domains/
+├── 12-shared/
+│   └── scripts/
+├── 12-codex/
+├── 12-claude/
 ├── raw-sources/
+│   ├── converted/
+│   ├── provenance/
 │   ├── pdfs/
-│   ├── articles/
-│   └── converted/
+│   ├── 00 RAW INBOX/
+│   └── quarantine/
 └── templates/
 ```
 
----
-
-## Step 3: Drop-in Files
-
-Copy from this skill's `assets/` folder to your vault:
-
-| From (assets/) | To (vault/) | Purpose |
-|----------------|-------------|---------|
-| `vault-CLAUDE.md` | `wiki/CLAUDE.md` | Schema — tells Claude the rules |
-| `vault-index.md` | `wiki/index.md` | Catalog of all wiki pages |
-| `vault-log.md` | `wiki/log.md` | Operation log |
-| `identity.md` | `identity.md` (vault root) | L0 context — fill in your name, role, key rules |
-| `templates/wiki-summary.md` | `templates/wiki-summary.md` | Summary page template |
-| `templates/wiki-entity.md` | `templates/wiki-entity.md` | Entity page template |
-| `templates/wiki-concept.md` | `templates/wiki-concept.md` | Concept page template |
-| `templates/wiki-synthesis.md` | `templates/wiki-synthesis.md` | Synthesis page template |
-| `templates/wiki-domain.md` | `templates/wiki-domain.md` | Domain MOC template |
-| `templates/wing-person.md` | `templates/wing-person.md` | Person wing — 5 halls |
-| `templates/wing-project.md` | `templates/wing-project.md` | Project wing — 5 halls |
-| `templates/drawer.md` | `templates/drawer.md` | Immutable session log template |
-| `graph/` | `memory/graph/` or `12-shared/graph/` | Graphify scripts, review queue, fixture tests |
-
-**After copying `identity.md`:** Open it and fill in your name, role, primary language, and any site-specific rules you always want Claude to follow. Keep it under 150 words — it's loaded every session.
-
-Then create initial memory files:
-
-```
-memory/memory_active.md
-memory/memory_in_progress.md (optional — active task state)
-memory/memory_decisions.md
-memory/memory_projects.md
-memory/memory_tools.md
-memory/memory_clients.md    (optional — for client work)
-memory/memory_repos.md      (optional — for engineering work)
-```
-
-Use the file type templates from `references/memory-schema.md` as starting content.
-
-For the graph layer, copy `assets/graph/` into the graph folder and read `references/graphify.md`.
+If you use different agent names, create `12-{agent}/` folders instead.
 
 ---
 
-## Step 3b: Graphify Knowledge Graph
+## Step 3: Drop-In Files
 
-Install graphify if you want MCP graph search:
+Copy from this skill:
 
-```bash
-pip install graphifyy
-```
-
-Copy the bundled graph layer:
-
-```bash
-# Single-agent vault
-cp -R assets/graph/* {YOUR_VAULT_PATH}/memory/graph/
-
-# Multi-agent vault
-cp -R assets/graph/* {YOUR_VAULT_PATH}/12-shared/graph/
-```
-
-Regenerate:
-
-```bash
-cd {YOUR_VAULT_PATH}/memory/graph
-python extract_vault.py
-python suggest_wikilinks.py
-python hybrid_retrieval.py "initial vault setup"
-python tests/test_graphify_beads.py
-```
-
-Review `graphify-out/GRAPH_READY.md` before editing wiki pages. Record accepted/skipped/obsolete decisions in `review-state.jsonl`.
-Use `graphify-out/retrieval_candidates.jsonl` only as a derived hint list; Markdown remains canonical.
+| From | To | Purpose |
+|------|----|---------|
+| `assets/vault-CLAUDE.md` | `wiki/CLAUDE.md` or adapt into `AGENTS.md` | Vault schema and operator rules |
+| `assets/vault-index.md` | `wiki/index.md` | Catalog |
+| `assets/vault-log.md` | `wiki/log.md` | Operation log |
+| `assets/templates/wiki-summary.md` | `templates/wiki-summary.md` | Summary template |
+| `assets/templates/wiki-entity.md` | `templates/wiki-entity.md` | Entity template |
+| `assets/templates/wiki-concept.md` | `templates/wiki-concept.md` | Concept template |
+| `assets/templates/wiki-synthesis.md` | `templates/wiki-synthesis.md` | Synthesis template |
+| `assets/templates/wiki-domain.md` | `templates/wiki-domain.md` | Domain MOC template |
 
 ---
 
-## Step 4: MCP Configuration (optional but recommended)
+## Step 4: Initial Memory Files
 
-MCP (Model Context Protocol) servers allow Claude Code to read and write files in your vault directly. Use `@bitbonsai/mcpvault` for scoped access to specific vault folders.
+Create for each agent:
 
-### Install mcpvault
-
-```bash
-npm install -g @bitbonsai/mcpvault
-# or use npx (no global install needed)
+```text
+12-{agent}/memory_active.md
+12-{agent}/memory_corrections.md
+12-{agent}/memory_improvements_backlog.md
+12-{agent}/memory_heartbeat.md
+12-{agent}/memory_metrics.md
 ```
 
-### Configure in claude-workspace/.mcp.json
+Create shared files:
 
-```json
-{
-  "mcpServers": {
-    "obsidian-wiki": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "--yes",
-        "@bitbonsai/mcpvault@latest",
-        "{YOUR_VAULT_PATH}/wiki"
-      ],
-      "env": {}
-    },
-    "obsidian-memory": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "--yes",
-        "@bitbonsai/mcpvault@latest",
-        "{YOUR_VAULT_PATH}/memory"
-      ],
-      "env": {}
-    }
-  }
-}
+```text
+12-shared/memory_decisions.md
+12-shared/memory_routing.json
+12-shared/memory_projects.md
+12-shared/memory_tools.md
+12-shared/memory_repos.md
 ```
 
-Replace `{YOUR_VAULT_PATH}` with your absolute vault path.
-
-**Two separate MCP instances:**
-- `obsidian-wiki` → scoped to `wiki/` — knowledge base access
-- `obsidian-memory` → scoped to `memory/` — operational context access
-
-This keeps the two systems cleanly separated in Claude's tool calls.
-
-### Windows note
-
-On Windows, if `npx` is not in PATH, use the full path:
-```
-"command": "C:\\path\\to\\node\\npx.cmd"
-```
+See `references/memory-schema.md` for templates and routing guidance.
 
 ---
 
-## Step 4b: Optional Codex Hooks
+## Step 5: RAW/Git Policy
 
-Codex hooks can load Obsidian memory at session startup and remind the agent to update memory after `git push`.
+Recommended `.gitignore`:
 
-**Status:** Codex hooks are experimental. The official Codex hooks documentation currently says Windows support is temporarily disabled. Install the files as ready-to-use infrastructure, but do not claim live hook behavior on Windows until your Codex runtime confirms support.
+```gitignore
+# Local RAW cache
+raw-sources/pdfs/**/*.pdf
+raw-sources/00 RAW INBOX/**/*.pdf
+raw-sources/00 RAW INBOX/**/*.docx
+raw-sources/00 RAW INBOX/**/*.zip
+raw-sources/quarantine/**
 
-### Copy hook scripts
+# Local operator output
+output/memory-operator/**
 
-Copy these files from the skill into your Codex config:
-
-```bash
-mkdir -p ~/.codex/hooks
-cp assets/codex/hooks/codex-session-start.js ~/.codex/hooks/
-cp assets/codex/hooks/codex-post-tool-use.js ~/.codex/hooks/
-cp assets/codex/hooks/precompact-autosave.js ~/.codex/hooks/
-cp assets/codex/hooks/hooks.json.template ~/.codex/hooks.json
+# Keep these tracked
+!raw-sources/converted/**
+!raw-sources/provenance/**
 ```
 
-### Configure vault path
+Git should usually track:
 
-Use environment variables:
+- `wiki/**`
+- `raw-sources/converted/**`
+- `raw-sources/provenance/**`
+- `12-shared/**`
+- `12-{agent}/**`
+- docs, templates, routing, scripts
 
-```bash
-export OBSIDIAN_VAULT_PATH="/absolute/path/to/obsidian-vault"
-export OBSIDIAN_AGENT_ID="codex"
-```
+Git should usually not track:
 
-Or create `~/.codex/obsidian-memory.json`:
-
-```json
-{
-  "vaultPath": "/absolute/path/to/obsidian-vault",
-  "agentId": "codex"
-}
-```
-
-For multi-agent vaults, the hook looks for `12-{agentId}/` and `12-shared/`. For single-agent vaults, it falls back to `memory/`.
-
-### Enable Codex hooks when supported
-
-Add this to `~/.codex/config.toml` only after confirming your runtime supports hooks:
-
-```toml
-[features]
-codex_hooks = true
-```
-
-### Manual smoke tests
-
-```bash
-echo '{"source":"startup","cwd":"/path/to/repo","hook_event_name":"SessionStart"}' \
-  | node ~/.codex/hooks/codex-session-start.js
-
-echo '{"source":"resume","cwd":"/path/to/repo","hook_event_name":"SessionStart"}' \
-  | node ~/.codex/hooks/codex-session-start.js
-
-echo '{"tool_name":"Bash","tool_input":{"command":"git push origin main"},"cwd":"/path/to/repo","hook_event_name":"PostToolUse"}' \
-  | node ~/.codex/hooks/codex-post-tool-use.js
-
-echo '{"agent_id":"codex","session_id":"demo","user_goal":"test autosave","important_decisions":["Markdown remains canonical"],"trigger":"precompact"}' \
-  | node ~/.codex/hooks/precompact-autosave.js
-```
-
-`startup` should print bounded Obsidian context. `resume` should stay silent. `git push` should print a JSON reminder to update Obsidian memory.
+- RAW PDF/DOCX/ZIP source binaries;
+- temporary conversion output;
+- quarantine conflicts unless intentionally documented as markdown.
 
 ---
 
-## Step 5: Git Sync (optional — for multi-device)
+## Step 6: Provenance Manifest
 
-To sync your vault across devices (laptop + phone + VPS):
+Create:
+
+```text
+raw-sources/provenance/raw-local-manifest.jsonl
+raw-sources/provenance/README.md
+```
+
+Each RAW source should have a JSONL row with:
+
+- `source_id`
+- `source_filename`
+- `source_type`
+- `sha256`
+- `size_bytes`
+- `local_cache_path`
+- `source_availability`
+- `archive_status`
+- `external_archive_uri`
+- `converted_path`
+- `wiki_summary_path`
+- `import_batch_id`
+- `updated_at`
+
+Use this manifest even when RAW files are local-only. It gives Git-tracked markdown a verifiable source identity.
+
+---
+
+## Step 7: Optional MCP Configuration
+
+If your agent supports MCP, configure scoped filesystem or Obsidian access. Prefer separate scopes:
+
+- wiki scope: `wiki/`
+- shared memory scope: `12-shared/`
+- current agent private scope: `12-{agent}/`
+
+Avoid giving a generic agent broad write access to every private memory folder.
+
+---
+
+## Step 8: Git Sync
+
+Initialize after RAW policy:
 
 ```bash
 cd {YOUR_VAULT_PATH}
 git init
 git remote add origin git@github.com:{YOUR_USERNAME}/{YOUR_VAULT_REPO}.git
-git add .
-git commit -m "init: obsidian vault with LLM wiki + memory system"
+git add .gitignore wiki 12-shared raw-sources/converted raw-sources/provenance templates
+git commit -m "init: obsidian memory wiki system"
 git push -u origin main
 ```
 
-Install obsidian-git plugin on each device and configure pull on startup.
+If using Obsidian Git on mobile:
 
-**Note:** Add sensitive paths to `.gitignore` if needed. The vault itself is usually safe to sync publicly if you don't store credentials in it.
-
----
-
-## Step 6: Register Vault Path in Claude's Memory
-
-**This step is critical.** Without it, Claude won't know where your vault is in new sessions and will ask every time.
-
-### 6a. Global fallback — `~/.claude/CLAUDE.md`
-
-Create this file so Claude knows your vault path in any session, regardless of working directory:
-
-**macOS/Linux:** `~/.claude/CLAUDE.md`
-**Windows:** `C:\Users\{YOU}\.claude\CLAUDE.md`
-
-```markdown
-# Global Claude Code Instructions
-
-## Obsidian Vault
-
-**Path:** `/path/to/your/obsidian-vault/`
-
-Key folders:
-- `inbox/` — incoming files (or `00-inbox/` — whatever you named it)
-- `wiki/` — LLM knowledge base (Claude manages)
-- `memory/` — agent operational memory
-- `raw-sources/` — original sources (pdfs/, articles/, converted/)
-- `templates/` — page templates
-```
-
-Replace `/path/to/your/obsidian-vault/` with your actual vault path.
-
-### 6b. Project-level infrastructure file
-
-If you work from a specific Claude Code workspace directory, create an `infrastructure.md` in that project's native memory folder. This gets auto-loaded as system context in every session.
-
-**Claude Code project memory location:**
-- macOS/Linux: `~/.claude/projects/{project-slug}/memory/infrastructure.md`
-- Windows: `C:\Users\{YOU}\.claude\projects\{project-slug}\memory\infrastructure.md`
-
-The `{project-slug}` matches your workspace path with slashes replaced by dashes.
-
-```markdown
-# Infrastructure — Key Paths
-
-## Obsidian Vault
-
-**Vault root:** `/path/to/your/obsidian-vault/`
-
-Key folders:
-- `inbox/` — incoming files for processing
-- `wiki/` — LLM Wiki (knowledge, Claude manages)
-- `memory/` — agent operational context
-- `raw-sources/` — originals (pdfs/, articles/, converted/)
-- `templates/` — page templates
-
-**Git remote:** `git@github.com:{username}/{vault-repo}.git`
-```
-
-Then add a line to that project's `MEMORY.md` index:
-```markdown
-- [Infrastructure](infrastructure.md) — vault path, key folders, git remote
-```
-
-**Why both files?** The global `CLAUDE.md` covers any session. The project `infrastructure.md` gets auto-loaded with richer context when working from your main workspace.
+- Pull on startup/open.
+- Commit/push after editing.
+- Keep attachments and RAW binaries out of Git unless intentionally small and safe.
+- If mobile sync breaks, first inspect Obsidian Git auth/logs before changing vault files.
 
 ---
 
-## Step 7: First Log Entry
+## Step 9: First Log Entry
 
-Write the initialization entry in `wiki/log.md`:
+Add to `wiki/log.md`:
 
 ```markdown
 ## YYYY-MM-DDTHH:MM — INIT | System initialization
 
-- Created: wiki/, wiki/wings/, wiki/drawers/, memory/, raw-sources/, output/ structure
-- Created: wiki/CLAUDE.md, wiki/index.md, wiki/log.md
-- Created: identity.md (L0 context)
-- Created: templates/ (8 templates: 5 wiki + wing-person + wing-project + drawer)
-- Notes: LLM Wiki + Agent Memory + MemPalace system deployed.
+- Created: wiki/, 12-shared/, 12-{agent}/, raw-sources/, templates/
+- Created: schema, index, log, templates
+- Policy: Git tracks wiki/converted/provenance/memory; RAW binaries stay local by default
+- Notes: Obsidian Memory system initialized.
 ```
 
 ---
 
-## You're Ready
+## Ready Check
 
-Your vault now has:
-- ✅ Wiki layer for accumulated knowledge (INGEST, QUERY, LINT)
-- ✅ Memory layer for agent operational context (load order, routing)
-- ✅ MemPalace layer for person and project profiles (wings + drawers)
-- ✅ Output layer for regeneratable dashboards and reports
-- ✅ Templates for all 8 page types (5 wiki + wing-person + wing-project + drawer)
-- ✅ Identity file for L0 context loaded every session
-- ✅ Schema file telling Claude the rules (`wiki/CLAUDE.md`)
-- ✅ Operation log tracking everything that happens
-- ✅ Vault path registered in Claude's memory — no more "where is your vault?" in new sessions
+Before the first real ingest:
 
-**Next step:** Start your first INGEST. Pick a book, article, or PDF you've read recently and process it into the wiki. See the INGEST workflow in SKILL.md.
+- `wiki/index.md` exists.
+- `wiki/log.md` exists.
+- At least one private `12-{agent}/memory_active.md` exists.
+- `12-shared/memory_decisions.md` exists.
+- RAW binaries are ignored by Git.
+- Provenance manifest path exists.
 
-**Start using MemPalace:** At the end of your first significant session, run `/session-summary` — it will create a drawer automatically. Then run `/compile` to push the session data into wings.
+Next step: run a small INGEST or QUERY test before bulk importing a large folder.

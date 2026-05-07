@@ -1,389 +1,224 @@
 # Memory Schema — Agent Operational Context
 
-The `memory/` layer is the agent's operational brain — what it knows about the current work context, decisions made, projects in flight, and tools available.
+The memory layer stores operating context: what the agent is doing, which decisions are durable, which process errors must not repeat, and which projects/tools matter.
 
-**Key distinction:** memory ≠ wiki. Memory is session state and operational context. Wiki is accumulated knowledge from sources. Never duplicate content between them.
-
----
-
-## Graph Layer
-
-The graph layer is derived from `wiki/` and `raw-sources/`; it is not canonical memory.
-
-Paths:
-
-- Single-agent: `memory/graph/`
-- Multi-agent: `12-shared/graph/`
-
-Install by copying `assets/graph/` from this skill into the graph path. See `references/graphify.md` for the full workflow.
-
-Key files:
-
-- `extract_vault.py` — creates typed graph metadata and `graphify-out/graph.json`.
-- `suggest_wikilinks.py` — creates `GRAPH_READY.md` and `missing-links.md`.
-- `hybrid_retrieval.py` — creates query-scored `retrieval_candidates.jsonl`.
-- `review-state.jsonl` — append-only review state for `accepted`, `skipped`, and `obsolete` actions.
-
-Rule: graph scripts must never edit `wiki/` or `raw-sources/`; they only generate reports.
-
-MemPalace-derived memory rules:
-
-- Important conclusions in `memory_decisions.md`, summaries, synthesis, and wings should link to verbatim evidence.
-- Durable decisions are append-only; newer entries supersede older ones instead of silently rewriting them.
-- Precompact/session drafts are safety nets in private memory and are not canonical until reviewed.
+Memory is not the wiki. Wiki pages store knowledge from sources. Memory files store how the agent should operate.
 
 ---
 
-## File Types
+## Recommended Roots
 
-### memory_active.md — Current Focus
-**Load order: #1, always**
+```text
+vault/
+├── 12-shared/
+│   ├── memory_decisions.md
+│   ├── memory_routing.json
+│   ├── memory_projects.md
+│   ├── memory_tools.md
+│   ├── memory_repos.md
+│   └── scripts/
+├── 12-codex/
+│   ├── memory_active.md
+│   ├── memory_corrections.md
+│   ├── memory_improvements_backlog.md
+│   ├── memory_heartbeat.md
+│   └── memory_metrics.md
+└── 12-claude/
+    ├── memory_active.md
+    ├── memory_corrections.md
+    ├── memory_improvements_backlog.md
+    ├── memory_heartbeat.md
+    └── memory_metrics.md
+```
 
-The "what matters right now" file. Maximum 15 lines. Not a journal — a live snapshot.
+Use `12-{agent}/` for each additional agent. Keep agent-private folders strictly separated.
+
+Optional project-local auxiliary memory can live outside the vault or in a project workspace, for example `agent-memory-codex/`. Treat it as a local helper layer, not the canonical private memory, unless the vault's own routing contract says otherwise.
+
+---
+
+## Shared Files
+
+### `12-shared/memory_decisions.md`
+
+Durable decisions that apply across agents and sessions. Append-only unless a decision must be explicitly superseded.
+
+Recommended line format:
+
+```markdown
+- YYYY-MM-DD: Decision text. Attribution: user | agent | source. Status: active | superseded.
+```
+
+Use this for architecture contracts, routing decisions, Git/RAW policy, and recurring workflow rules.
+
+### `12-shared/memory_routing.json`
+
+Machine-readable routing contract. It should distinguish:
+
+- shared memory files;
+- canonical private files per agent;
+- optional project-local auxiliary files;
+- wiki roots;
+- RAW/provenance roots.
+
+For multi-agent vaults, avoid one ambiguous `private_files` bucket. Use explicit categories such as `vault_private_files` and `project_private_files`.
+
+### `12-shared/memory_projects.md`
+
+Project registry.
+
+```markdown
+## {Project Name}
+- Status: active | planning | paused | completed
+- Goal: one line
+- Canonical files: [[...]]
+- Repo: URL or path
+- Last updated: YYYY-MM-DD
+```
+
+### `12-shared/memory_tools.md`
+
+Tools, plugins, MCP servers, automations, and verified command paths.
+
+### `12-shared/memory_repos.md`
+
+Repos and codebases the agents operate.
+
+---
+
+## Private Files
+
+### `memory_active.md`
+
+Load order: first private file.
+
+Purpose: current focus, immediate constraints, blockers, and fresh operational context.
+
+Keep it compact. It is a live snapshot, not a journal.
 
 ```markdown
 ---
-updated: YYYY-MM-DDTHH:MM
+updated: YYYY-MM-DD
 type: memory-active
+agent: codex
 ---
 
 # Active Memory
 
 ## Current Focus
-[1-3 lines: what is being worked on right now]
-
-## Infrastructure Status
-- [tool/system]: [status]
+- ...
 
 ## Blockers
-- [blocker if any, or "none"]
-
-## This Week
-- [ ] task 1
-- [ ] task 2
-```
-
-**Rule:** When this file exceeds 20 lines, trim it. Old focus goes to memory_projects or archive.
-
----
-
-### memory_in_progress.md — Active Work State
-**Load order: after `memory_active.md`, when available**
-
-The "what is actively being worked on" file. Use it for tasks, current repos, blockers, and next actions that should survive across sessions.
-
-Single-agent path: `memory/memory_in_progress.md`.
-
-Multi-agent path: `{private}/memory_in_progress.md`, for example `12-codex/memory_in_progress.md` or `12-claude/memory_in_progress.md`.
-
-```markdown
----
-agent: codex
-type: memory-in-progress
-updated: YYYY-MM-DD
----
-
-# Memory In Progress — Codex
-
-## Active Tasks
-
-### TASK-ID — short title
-- repo:
-- branch:
-- status:
-- context:
-- next_action:
-- last_update:
-- source:
-- link:
-
-## Current Repos
-
-## Blocked
-
-## Next Actions
+- none
 
 ## Recently Done
+- YYYY-MM-DD: ...
 ```
 
-**Rule:** Keep this operational, not archival. Completed work should move to `Recently Done`, `memory_projects.md`, or a session drawer.
+### `memory_corrections.md`
 
----
-
-### memory_decisions.md — Global Conventions
-**Load order: #2, always**
-
-Architectural and workflow decisions that apply across all work. Things that would take time to re-derive.
+Load before non-trivial tasks. Prepend-only log of logic/process mistakes, not style preferences.
 
 ```markdown
-## Decisions
-
-- Decision description [confidence:high|medium|low] [source:manual|doc|tool|research]
-- Another decision...
+## YYYY-MM-DD — Short title
+- Error: what went wrong
+- Context: task/files
+- Root cause: skipped assumption, wrong routing, unsafe operation, etc.
+- Fix: concrete future behavior
 ```
 
-Format each decision as a single line. If a decision is reversed, update the existing line — don't add a new one.
+### `memory_improvements_backlog.md`
 
----
+Improvement ideas for the agent, skill, scripts, or process.
 
-### memory_projects.md — Project Registry
-
-Active and planned projects. One section per project.
+Use sections such as Active, In Progress, Done.
 
 ```markdown
-## {Project Name}
-- Status: active | planning | paused | completed
-- Stack: [technologies]
-- Goal: [one line]
-- Repo: {repo-link}
-- Last updated: YYYY-MM-DD
+- [ ] Idea — Impact: H/M/L | Effort: H/M/L | Source: user|heartbeat|session | Added: YYYY-MM-DD
 ```
 
----
+### `memory_heartbeat.md`
 
-### memory_tools.md — Tools and Infrastructure
+Periodic self-check log. Useful for detecting recurring mistakes and stale improvement ideas.
 
-Every tool, plugin, MCP server, IDE setting that has been set up and verified.
+### `memory_metrics.md`
 
-```markdown
-## {Tool Name}
-- Version: x.x.x
-- Status: active | broken | deprecated
-- Purpose: [what it does]
-- Config: [where config lives]
-- Notes: [anything non-obvious]
-```
-
----
-
-### memory_clients.md — Clients and Contacts
-
-For agency/freelance work. One section per client.
-
-```markdown
-## {Client Name}
-- Status: active | prospect | inactive
-- Contact: [name, channel]
-- Key context: [what they need, preferences, constraints]
-- Projects: [[project-name]]
-```
-
----
-
-### memory_repos.md — Repositories and Codebases
-
-Repos that have been worked on or studied.
-
-```markdown
-## {repo-name}
-- URL: https://github.com/...
-- Purpose: [what it does]
-- Status: active | reference | archived
-- Key files: [entry points, config, schema]
-- Notes: [architecture decisions, gotchas]
-```
-
----
-
-### projects/{name}/ — Per-Project Deep Context
-
-For active projects, create a subdirectory with detailed files:
-- `context.md` — product/market/positioning context (read by all project-related agents)
-- `decisions.md` — project-specific technical decisions
-- `tasks.md` — current task list with status
-- `log.md` — project operation log
-
----
-
-## Self-Improvement Loop (4 files)
-
-Layer for compounding agent quality. Distinct from `voice-corrections.md` (which handles style/tone only).
-
-### memory_corrections.md — Logical/Process Errors
-**Load order: #3 — before non-trivial tasks (last 5 entries)**
-
-Prepend-only log of process/logic mistakes the agent made. NOT for style/tone (those go to `voice-corrections.md`).
-
-```markdown
-## YYYY-MM-DD — {short title}
-- **Error:** what went wrong
-- **Context:** task / file / skill
-- **Root cause:** which principle was violated, which step skipped
-- **Fix:** how to do it correctly next time
-- **Rule extracted:** → `feedback_*.md` if generalizable, else N/A
-```
-
-Sources: explicit user correction, session-summary self-detection, HEARTBEAT pattern detection.
-
-### memory_improvements_backlog.md — Improvement Ideas
-
-Ideas for improving the agent, skills, memory, or workflow. Three sections: Active / In Progress / Done.
-
-```markdown
-- [ ] {Idea} — Impact: H/M/L | Effort: H/M/L | Source: {heartbeat|user|session-summary} | Added: YYYY-MM-DD
-```
-
-Done items archived weekly to `archive/`.
-
-### memory_metrics.md — Weekly Snapshot
-
-Updated by HEARTBEAT every Sunday. Single growing table.
-
-| Week | Sessions | Corrections | Backlog done | Error patterns | Improvements shipped |
-
-### memory_heartbeat.md — Daily Self-Check Log
-
-Updated daily at 10:00 MSK by `heartbeat-self-check` cron (`mcp__scheduled-tasks`). Prepend-only.
-
-```markdown
-## YYYY-MM-DD
-- **Read:** memory_active, corrections (10), backlog active, insights
-- **Patterns in corrections:** {repeating? clean slate?}
-- **Stale backlog:** {items idle 7+ days}
-- **New ideas:** {from prior day's work}
-- **Will try today:** {1-2 concrete behavior changes}
-- **Metrics update:** N/A or "weekly snapshot updated"
-```
-
-**The "session with no writes is a failure" rule applies:** if nothing to record, write "clean slate, no new patterns".
+Weekly or periodic snapshot of corrections, improvements shipped, verification failures, and operator quality.
 
 ---
 
 ## Load Order
 
-At the start of any agent session, load memory files in this order:
+At the start of explicit MEMORY work:
 
-```
-0) identity.md               ← L0 context — ALWAYS first (~100 tokens, vault root)
-1) memory_active.md          ← ALWAYS (current focus, blockers)
-2) memory_in_progress.md     ← if available (active tasks and next actions)
-3) memory_decisions.md       ← ALWAYS (global conventions)
-4) memory_corrections.md     ← BEFORE non-trivial tasks (last 5 entries)
-5) domain memory by context  ← route by session keywords (see Routing)
-6) project-specific files    ← if working on a specific project
-7) max 2 related domains     ← by trigger keywords
-8) wiki/wings/relevant-*.md  ← L2: if working with a specific person or project
-```
+1. Determine `agent_id`.
+2. Load `12-{agent}/memory_active.md`.
+3. Load `12-shared/memory_decisions.md`.
+4. Load recent relevant entries from `12-{agent}/memory_corrections.md`.
+5. Load route-specific shared/project files.
+6. Load at most two extra related files unless the user asked for a broad audit.
 
-**4-layer context loading model:**
-
-| Layer | Size | Files | When |
-|-------|------|-------|------|
-| L0 Identity | ~100 tokens | `identity.md` (vault root) | Every session |
-| L1 Critical | ~500-1000 tokens | `memory_active.md` + `memory_in_progress.md` + `memory_decisions.md` | Every session |
-| L2 Wings | ~200 tokens each | `wiki/wings/person-*.md`, `project-*.md` | On-demand by context |
-| L3 Deep | unlimited | `wiki/drawers/*`, `raw-sources/*` | Explicit search |
-
-Loading too much memory = slow, unfocused sessions. Load the minimum needed.
+Avoid bulk-loading the entire vault unless the task is explicitly an audit or migration.
 
 ---
 
-## Routing
+## Write Routing
 
-Context-aware routing: match session keywords to memory files.
+| Content | Destination |
+|---------|-------------|
+| Current focus, blockers, session context | `12-{agent}/memory_active.md` |
+| Process mistake by one agent | `12-{agent}/memory_corrections.md` |
+| Agent improvement idea | `12-{agent}/memory_improvements_backlog.md` |
+| Durable shared policy | `12-shared/memory_decisions.md` |
+| Project registry | `12-shared/memory_projects.md` |
+| Tool or command contract | `12-shared/memory_tools.md` |
+| Knowledge from source material | `wiki/`, not memory |
 
-**routing.json schema:**
+---
+
+## Routing JSON Pattern
+
+Example shape:
 
 ```json
 {
-  "routes": {
-    "coding": {
-      "primary": ["memory_decisions.md", "memory_tools.md", "memory_repos.md"],
-      "relation_triggers": {
-        "to_projects": "project_triggers",
-        "to_clients": "client_triggers"
-      }
-    },
-    "project-mgmt": {
-      "primary": ["memory_decisions.md", "memory_projects.md", "memory_clients.md"],
-      "relation_triggers": {
-        "to_repos": "repo_triggers",
-        "to_tools": "tool_triggers"
-      }
-    },
-    "research": {
-      "primary": ["memory_decisions.md", "memory_repos.md"],
-      "relation_triggers": {
-        "to_tools": "tool_triggers"
-      }
-    },
-    "wing-context": {
-      "primary": ["memory_decisions.md", "memory_clients.md"],
-      "relation_triggers": {
-        "to_wings": "wing_triggers"
-      }
-    },
-    "default": {
-      "primary": ["memory_decisions.md"],
-      "relation_triggers": {
-        "to_projects": "project_triggers",
-        "to_tools": "tool_triggers"
-      }
+  "agents": {
+    "codex": {
+      "vault_private_root": "12-codex",
+      "project_private_root": "agent-memory-codex",
+      "vault_private_files": [
+        "memory_active.md",
+        "memory_corrections.md",
+        "memory_improvements_backlog.md",
+        "memory_heartbeat.md",
+        "memory_metrics.md"
+      ],
+      "project_private_files": [
+        "memory_introspection.md",
+        "memory_daily/",
+        "HEARTBEAT.md"
+      ]
     }
   },
-  "relations": {
-    "to_projects": ["memory_projects.md"],
-    "to_clients": ["memory_clients.md"],
-    "to_repos": ["memory_repos.md"],
-    "to_tools": ["memory_tools.md"],
-    "to_wings": ["wiki/wings/"]
-  },
-  "trigger_sets": {
-    "project_triggers": ["project", "deadline", "milestone", "status", "MVP"],
-    "client_triggers": ["client", "customer", "requirements", "brief"],
-    "repo_triggers": ["github", "repo", "codebase", "git", "branch", "PR", "commit"],
-    "tool_triggers": ["MCP", "plugin", "obsidian", "claude", "IDE", "npm", "tool"],
-    "wing_triggers": ["person", "client", "contact", "profile", "wing", "who is", "tell me about"]
+  "shared_root": "12-shared",
+  "wiki_root": "wiki",
+  "raw_roots": {
+    "converted": "raw-sources/converted",
+    "provenance": "raw-sources/provenance",
+    "local_cache": ["raw-sources/pdfs", "raw-sources/00 RAW INBOX"]
   }
 }
 ```
 
-Add your own routes and trigger sets as your context grows.
+The exact schema can differ, but the categories must be explicit enough that scripts do not accidentally resolve Codex paths into Claude memory or vice versa.
 
 ---
 
-## Key Principles
+## Principles
 
-These are distilled from production agent systems (witcheer, ALIVE, gstack):
-
-### 1. A session with no writes is a failure
-Any session that reads from memory or wiki must write something back — update log, record a decision, capture a finding. If nothing was worth writing, the session was passive, not active.
-
-### 2. Corrections > abstract rules
-151 concrete examples beat 39,000 characters of abstract instructions. When you edit an AI draft, log what changed and why. Save these corrections in a `voice-corrections.md` file. All future drafts read this file before generating.
-
-```markdown
-# Voice Corrections
-
-## YYYY-MM-DD
-- Changed: [what the AI wrote]
-- To: [what you rewrote it as]
-- Why: [the principle behind the change]
-```
-
-### 3. Session idle timeout
-Set Claude Code session idle timeout to 60 minutes, not the default 1440. Long sessions accumulate stale context. Short sessions stay focused.
-
-### 4. Source diversity
-In research prompts, explicitly specify source order. Without instructions, models default to the same sources for everything (e.g., Reddit for all research). Specify: "Check academic papers first, then industry reports, then community forums."
-
-### 5. Compounding context
-The memory system compounds over time. Each session that writes high-quality notes makes the next session faster. The value is not in any single session — it's in the accumulation.
-
-### 6. Memory ≠ journal
-memory_active.md is not a log. It's a dashboard. Maximum 15 lines. Old focus goes to projects/ or archive. If you find yourself appending, you're journaling — trim instead.
-
----
-
-## Maintenance
-
-Weekly:
-- Review `memory_active.md` — trim anything that's no longer active
-- Scan `memory_decisions.md` — are any decisions outdated?
-- Archive completed projects from `memory_projects.md` to `archive/`
-- Run LINT on wiki (see wiki-schema.md)
-
-Monthly:
-- Review all memory files for accuracy
-- Prune stale tool entries from `memory_tools.md`
-- Update `routing.json` if new domains have emerged
+1. **Private means private:** never blend one agent's operational context into another agent's folder.
+2. **Shared means durable:** shared memory should contain stable rules, not transient scratch notes.
+3. **Append with attribution:** shared decisions need date and source.
+4. **Do not duplicate wiki knowledge:** summarize source-derived knowledge in `wiki/`, not in `memory_active.md`.
+5. **Load narrowly:** memory improves context only when it is relevant.
+6. **No performative writes:** write memory when it makes future work safer, faster, or more accurate.

@@ -9,11 +9,6 @@ tags:
   - wiki/synthesis
 status: active
 confidence: high
-valid_from: {{date}}
-valid_to:
-supersedes:
-superseded_by:
-source: ""
 ---
 
 # {{title}}
@@ -24,9 +19,9 @@ source: ""
 
 ## Sources
 
-- 
+-
 
-## Source Evidence
+## Used Evidence
 
 -
 
@@ -35,5 +30,3 @@ source: ""
 
 
 ## Conclusions
-
--
