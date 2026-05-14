@@ -51,6 +51,15 @@ Operational memory is not the same thing as wiki knowledge. It stores working co
 
 In mature deployments this loop can be scheduled, for example as a daily review that detects repeated process patterns and proposes improvements without auto-mutating canonical memory.
 
+**Codex Lifecycle Hooks** (`assets/codex/hooks/`) connect memory to agent runtime events:
+
+- `SessionStart` can load bounded active/shared/correction context at startup;
+- `PostToolUse` can notice important tool events, including `git push`, and remind the agent to update memory;
+- `PreCompact` can write a non-canonical session draft before context compaction;
+- `hooks.json.template` provides a ready starting point for wiring the hook bundle into Codex.
+
+Hooks are intentionally conservative. They do not mutate `wiki/`, `raw-sources/`, shared memory, or canonical memory automatically. Treat them as live only after local runtime configuration and `hooks-status` or equivalent smoke checks confirm that they are running.
+
 **RAW + Provenance Safety** (`raw-sources/`) keeps source traceability without bloating Git:
 
 - `raw-sources/converted/` and `raw-sources/provenance/` are Git-safe;
@@ -84,7 +93,8 @@ Restart the agent app after installing or updating skills.
 3. Copy `assets/templates/` to your vault's `templates/`.
 4. Create `12-shared/` and one `12-{agent}/` private memory folder per agent.
 5. Add a `.gitignore` policy before importing RAW binaries.
-6. Start with a small INGEST, QUERY, or LINT test.
+6. If you use Codex, copy/configure `assets/codex/hooks/`, `assets/codex/hooks/hooks.json.template`, and `assets/codex/env.example`; then verify with `hooks-status` or the smoke checks in `references/codex-hooks.md`.
+7. Start with a small INGEST, QUERY, LINT, or hook smoke test.
 
 ---
 
@@ -108,6 +118,11 @@ obsidian-memory/
     ├── codex/
     │   ├── env.example
     │   ├── hooks/
+    │   │   ├── codex-session-start.js
+    │   │   ├── codex-post-tool-use.js
+    │   │   ├── precompact-autosave.js
+    │   │   ├── hooks.json.template
+    │   │   └── tests/
     │   └── memory_in_progress.md
     ├── graph/
     ├── operator/
@@ -132,6 +147,7 @@ Core system:
 - `wiki/` implements the Obsidian LLM Wiki pattern: source-backed summaries, entities, concepts, domains, and synthesis pages.
 - `12-shared/` plus `12-{agent}/` implements multi-agent operational memory with private isolation.
 - `memory_corrections.md`, improvement backlog, metrics, and optional lessons implement the self-improvement loop.
+- `assets/codex/hooks/` implements the Codex hook bundle: `SessionStart`, `PostToolUse`, and `PreCompact` lifecycle helpers for bounded memory loading, push reminders, and safe pre-compaction drafts.
 - `assets/templates/drawer.md`, `wing-person.md`, and `wing-project.md` preserve MemPalace-style people/project memory: wings for durable people/project state and drawers for immutable session capture before reviewed compilation.
 
 Optional extensions:
@@ -139,7 +155,7 @@ Optional extensions:
 - `references/bridge-health.md` and `assets/operator/bridge_health.py` describe ClaudSoul-style practical bridges: script-checkable links between RAW, converted markdown, summaries, domains, graph actions, lessons, and session drafts. This is not a full ontology or persona architecture.
 - `references/operator-runtime.md` and `assets/operator/` describe GBrain-inspired runtime discipline: operation registry, retrieval replay, bridge/storage dashboard, and resolver audit. This is not a migration to GBrain, a DB layer, vector search, or MCP runtime.
 - `references/graphify.md` and `assets/graph/` describe an optional derived graph/retrieval layer combining Graphify-style extraction with a Beads-inspired review queue. Obsidian Markdown remains the source of truth; graph outputs are rebuildable.
-- `references/codex-hooks.md` and `assets/codex/` describe optional Codex lifecycle hooks. Hooks are live only after the runtime is configured and `hooks-status` or equivalent smoke checks confirm they run.
+- `references/codex-hooks.md` documents how to install, configure, test, and fall back from the Codex hook bundle. Hooks are live only after the runtime is configured and `hooks-status` or equivalent smoke checks confirm they run.
 
 ---
 
@@ -152,6 +168,7 @@ Optional extensions:
 | QUERY | Search and synthesize knowledge |
 | LINT | Check wiki health |
 | MEMORY | Load or update agent context |
+| HOOKS | Wire runtime events to bounded memory context, push reminders, and pre-compaction drafts |
 | BRIDGE | Check practical bridges between memory layers |
 | RELEASE | Verify provenance, RAW guard, and Git safety before push |
 
