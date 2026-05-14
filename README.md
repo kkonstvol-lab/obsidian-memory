@@ -8,17 +8,30 @@ This repository is the public, portable skill source. It reflects production les
 
 ---
 
+## Origin
+
+The skill is built on Tobi Lutke's LLM Wiki pattern: the agent acts like a programmer, Obsidian acts like the IDE, and the knowledge base is treated like a codebase.
+
+It extends that base with agent-memory ideas from witcheer's ALIVE system, gstack-style runtime discipline, MemPalace-style people/project memory, Graphify-derived graph extraction, and a Beads-inspired graph action review queue.
+
+The result is two parallel systems inside one vault:
+
+- `wiki/` — accumulated, source-backed knowledge from books, articles, PDFs, conversations, and other sources;
+- `memory/`, `12-shared/`, or `12-{agent}/` — operational context for the agent: current focus, projects, tools, durable decisions, corrections, and handoff state.
+
+---
+
 ## What It Does
 
 **LLM Wiki** (`wiki/`) stores durable knowledge:
 
-- ingest sources into structured summaries;
+- turn books, articles, PDFs, conversations, and other sources into structured summaries;
 - extract entities and concepts into linked pages;
 - organize knowledge through domain Maps of Content;
 - create synthesis pages only when they are useful and approved;
 - lint links, frontmatter, index drift, and evidence gaps.
 
-This is the base idea of the system: Obsidian is a markdown wiki that the agent can operate like a codebase. Sources become summaries, summaries become entities/concepts/domains, and recurring questions become synthesis pages.
+This is the base idea of the system: direct file reading and deliberate wiki structure can beat premature RAG for small-to-medium corpora. Sources become summaries, summaries become entities/concepts/domains, and recurring questions become synthesis pages.
 
 **Agent Memory** (`12-shared/` + `12-{agent}/`) stores operating context:
 
@@ -26,12 +39,17 @@ This is the base idea of the system: Obsidian is a markdown wiki that the agent 
 - `12-codex/`, `12-claude/`, or another `12-{agent}/` hold private agent memory;
 - private memory stays isolated; shared decisions are append-only and attributed.
 
+Operational memory is not the same thing as wiki knowledge. It stores working context: active focus, global decisions, project and tool registries, corrections, and next actions. Load it in layers, from compact identity/routing context to deeper search only when the task needs it.
+
 **Self-Improvement Loop** (`memory_corrections.md` + backlog/metrics/lessons) compounds agent quality:
 
 - record logical and process mistakes as concrete correction entries;
 - extract repeated mistakes into reviewed lessons or advisory gates;
 - keep improvement ideas in a backlog until they are intentionally shipped;
+- read recent corrections before non-trivial work;
 - measure and review drift instead of relying on vibes or hidden context.
+
+In mature deployments this loop can be scheduled, for example as a daily review that detects repeated process patterns and proposes improvements without auto-mutating canonical memory.
 
 **RAW + Provenance Safety** (`raw-sources/`) keeps source traceability without bloating Git:
 
@@ -114,14 +132,14 @@ Core system:
 - `wiki/` implements the Obsidian LLM Wiki pattern: source-backed summaries, entities, concepts, domains, and synthesis pages.
 - `12-shared/` plus `12-{agent}/` implements multi-agent operational memory with private isolation.
 - `memory_corrections.md`, improvement backlog, metrics, and optional lessons implement the self-improvement loop.
+- `assets/templates/drawer.md`, `wing-person.md`, and `wing-project.md` preserve MemPalace-style people/project memory: wings for durable people/project state and drawers for immutable session capture before reviewed compilation.
 
 Optional extensions:
 
 - `references/bridge-health.md` and `assets/operator/bridge_health.py` describe ClaudSoul-style practical bridges: script-checkable links between RAW, converted markdown, summaries, domains, graph actions, lessons, and session drafts. This is not a full ontology or persona architecture.
 - `references/operator-runtime.md` and `assets/operator/` describe GBrain-inspired runtime discipline: operation registry, retrieval replay, bridge/storage dashboard, and resolver audit. This is not a migration to GBrain, a DB layer, vector search, or MCP runtime.
-- `references/graphify.md` and `assets/graph/` describe an optional derived graph/retrieval layer. Obsidian Markdown remains the source of truth; graph outputs are rebuildable.
+- `references/graphify.md` and `assets/graph/` describe an optional derived graph/retrieval layer combining Graphify-style extraction with a Beads-inspired review queue. Obsidian Markdown remains the source of truth; graph outputs are rebuildable.
 - `references/codex-hooks.md` and `assets/codex/` describe optional Codex lifecycle hooks. Hooks are live only after the runtime is configured and `hooks-status` or equivalent smoke checks confirm they run.
-- `assets/templates/drawer.md`, `wing-person.md`, and `wing-project.md` preserve MemPalace-style memory patterns for vaults that use wings/drawers.
 
 ---
 
@@ -167,6 +185,7 @@ Optional extensions:
 Built from production use by human operators working with Claude Code and Codex.
 
 - Core pattern: Tobi Lutke's LLM Wiki idea.
-- Memory patterns: MemPalace-style wings/drawers and long-running agent memory practice.
+- Agent memory influences: witcheer's ALIVE system, gstack-style architecture/runtime discipline, MemPalace-style wings/drawers, and long-running agent memory practice.
 - Public skill implementation and later production hardening: Claude Code and Codex, with Codex carrying the bridge-health, GBrain-inspired operator runtime, hook refresh, and public release synchronization work.
-- Design influences: ClaudSoul-style practical bridge checks and GBrain-style runtime discipline.
+- Graph layer influences: Graphify-style extraction and Beads-inspired graph action review.
+- Design influences: ClaudSoul-style practical bridge checks and GBrain/GStack-style runtime discipline.

@@ -1,6 +1,8 @@
 # Graphify Knowledge Graph
 
-Graphify is an optional derived layer over `wiki/` and `raw-sources/`. Obsidian remains the canonical source of truth; generated graph files can be deleted and rebuilt.
+Graphify is an optional derived layer over `wiki/` and `raw-sources/`. In this skill it is paired with a Beads-inspired review queue: graph extraction suggests actions, but human/review-state decisions decide what becomes canonical wiki structure.
+
+Obsidian remains the canonical source of truth; generated graph files can be deleted and rebuilt.
 
 ## What This Skill Ships
 
