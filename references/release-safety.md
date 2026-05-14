@@ -110,8 +110,20 @@ A useful `memory_operator.py check-all` command should run:
 5. Git whitespace/diff check.
 6. Agent-private isolation check.
 7. RAW tracking check.
+8. Practical bridge health check.
+9. Optional retrieval/skill audit reports when relevant.
 
 It should exit non-zero on blocking failures and may print non-blocking lint debt separately.
+
+If you do not have a local `memory_operator.py`, run the portable public checks directly:
+
+```bash
+python3 assets/operator/bridge_health.py --vault /path/to/vault --status
+python3 assets/operator/retrieval_eval.py report
+python3 assets/operator/operation_registry.py
+```
+
+These scripts are advisory by default and must not rewrite canonical memory automatically.
 
 ---
 

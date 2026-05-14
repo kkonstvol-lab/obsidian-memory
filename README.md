@@ -1,51 +1,52 @@
 # obsidian-memory
 
-An explicit-only skill for building and operating an Obsidian-based LLM wiki plus agent memory system.
+Explicit-only skill for building and operating an Obsidian-based LLM wiki plus agent memory system.
 
 **The agent is the operator. Obsidian is the IDE. The wiki is the codebase.**
 
-This skill is based on production use of a markdown-first knowledge system: Git stores canonical wiki/memory artifacts, while heavy RAW binaries can stay in a local cache with provenance.
+This repository is the public, portable skill source. It reflects production lessons from an internal Obsidian Memory system without publishing private vault state, local RAW caches, session drafts, or machine-specific paths.
 
 ---
 
 ## What It Does
 
-**LLM Wiki** (`wiki/`) — an accumulated knowledge base that grows with every source:
+**LLM Wiki** (`wiki/`) stores durable knowledge:
 
-- Ingest PDF/article/book/conversation sources into structured summaries.
-- Extract durable entities and concepts into linked pages.
-- Organize knowledge by domain Maps of Content.
-- Create synthesis pages only when they are useful and approved.
-- Lint links, frontmatter, index drift, and unprocessed sources.
+- ingest sources into structured summaries;
+- extract entities and concepts into linked pages;
+- organize knowledge through domain Maps of Content;
+- create synthesis pages only when they are useful and approved;
+- lint links, frontmatter, index drift, and evidence gaps.
 
-**Agent Memory** (`12-shared/` + `12-{agent}/`) — operational context that persists across sessions:
+**Agent Memory** (`12-shared/` + `12-{agent}/`) stores operating context:
 
-- `12-shared/` stores durable shared decisions, routing, and optional scripts.
-- `12-codex/`, `12-claude/`, or another `12-{agent}/` store private memory per agent.
-- Private context stays isolated; shared decisions are append-only and attributed.
+- `12-shared/` holds shared decisions, routing, scripts, and release policy;
+- `12-codex/`, `12-claude/`, or another `12-{agent}/` hold private agent memory;
+- private memory stays isolated; shared decisions are append-only and attributed.
 
-**RAW + Provenance Safety** (`raw-sources/`) — source traceability without bloating Git:
+**RAW + Provenance Safety** (`raw-sources/`) keeps source traceability without bloating Git:
 
-- `raw-sources/converted/` stores converted markdown and is Git-safe.
-- `raw-sources/provenance/` stores manifests and source identity.
-- `raw-sources/pdfs/` and `raw-sources/00 RAW INBOX/` can stay local and Git-ignored.
-- RAW files are tracked by hash, size, path, availability, and converted/wiki links.
+- `raw-sources/converted/` and `raw-sources/provenance/` are Git-safe;
+- `raw-sources/pdfs/` and `raw-sources/00 RAW INBOX/` are normally local/ignored;
+- source identity is tracked through hash, size, availability, converted paths, and summary links.
 
 ---
 
 ## Install
 
+Claude Code-style install:
+
 ```bash
 git clone https://github.com/kkonstvol-lab/obsidian-memory ~/.claude/skills/obsidian-memory
 ```
 
-or install into another agent skills directory:
+Generic agent skills install:
 
 ```bash
 git clone https://github.com/kkonstvol-lab/obsidian-memory ~/.agents/skills/obsidian-memory
 ```
 
-Restart the agent app. The skill will be available as `obsidian-memory` when explicitly invoked or when the user asks to work with an Obsidian vault/wiki/memory system.
+Restart the agent app after installing or updating skills.
 
 ---
 
@@ -56,7 +57,7 @@ Restart the agent app. The skill will be available as `obsidian-memory` when exp
 3. Copy `assets/templates/` to your vault's `templates/`.
 4. Create `12-shared/` and one `12-{agent}/` private memory folder per agent.
 5. Add a `.gitignore` policy before importing RAW binaries.
-6. Start with a small INGEST or QUERY test.
+6. Start with a small INGEST, QUERY, or LINT test.
 
 ---
 
@@ -64,38 +65,45 @@ Restart the agent app. The skill will be available as `obsidian-memory` when exp
 
 ```text
 obsidian-memory/
+├── AGENTS.md
+├── README.md
 ├── SKILL.md
 ├── references/
-│   ├── wiki-schema.md
-│   ├── memory-schema.md
-│   ├── release-safety.md
-│   ├── graphify.md
+│   ├── bridge-health.md
 │   ├── codex-hooks.md
-│   └── setup.md
+│   ├── graphify.md
+│   ├── memory-schema.md
+│   ├── operator-runtime.md
+│   ├── release-safety.md
+│   ├── setup.md
+│   └── wiki-schema.md
 └── assets/
-    ├── graph/
     ├── codex/
+    │   ├── env.example
+    │   ├── hooks/
+    │   └── memory_in_progress.md
+    ├── graph/
+    ├── operator/
+    │   ├── bridge_health.py
+    │   ├── operation_registry.py
+    │   ├── retrieval_eval.py
+    │   ├── skill_repo_audit.py
+    │   └── tests/
+    ├── templates/
+    ├── identity.md
     ├── vault-CLAUDE.md
     ├── vault-index.md
-    ├── vault-log.md
-    ├── identity.md
-    └── templates/
-        ├── wiki-summary.md
-        ├── wiki-entity.md
-        ├── wiki-concept.md
-        ├── wiki-synthesis.md
-        ├── wiki-domain.md
-        ├── drawer.md
-        ├── wing-person.md
-        └── wing-project.md
+    └── vault-log.md
 ```
 
 ---
 
 ## Optional Extensions
 
-- `references/graphify.md` and `assets/graph/` describe an optional derived knowledge-graph layer. Obsidian markdown remains the source of truth; graph outputs are rebuildable.
-- `references/codex-hooks.md` and `assets/codex/` describe optional Codex lifecycle hooks. Treat hooks as runtime-dependent and verify they actually run before relying on automatic behavior.
+- `references/bridge-health.md` and `assets/operator/bridge_health.py` describe ClaudSoul-style practical bridges: script-checkable links between RAW, converted markdown, summaries, domains, graph actions, lessons, and session drafts. This is not a full ontology or persona architecture.
+- `references/operator-runtime.md` and `assets/operator/` describe GBrain-inspired runtime discipline: operation registry, retrieval replay, bridge/storage dashboard, and resolver audit. This is not a migration to GBrain, a DB layer, vector search, or MCP runtime.
+- `references/graphify.md` and `assets/graph/` describe an optional derived graph/retrieval layer. Obsidian Markdown remains the source of truth; graph outputs are rebuildable.
+- `references/codex-hooks.md` and `assets/codex/` describe optional Codex lifecycle hooks. Hooks are live only after the runtime is configured and `hooks-status` or equivalent smoke checks confirm they run.
 - `assets/templates/drawer.md`, `wing-person.md`, and `wing-project.md` preserve MemPalace-style memory patterns for vaults that use wings/drawers.
 
 ---
@@ -109,6 +117,7 @@ obsidian-memory/
 | QUERY | Search and synthesize knowledge |
 | LINT | Check wiki health |
 | MEMORY | Load or update agent context |
+| BRIDGE | Check practical bridges between memory layers |
 | RELEASE | Verify provenance, RAW guard, and Git safety before push |
 
 ---
@@ -120,8 +129,9 @@ obsidian-memory/
 3. **Synthesis by approval:** propose durable synthesis pages when useful; create after approval or direct request.
 4. **Private memory isolation:** never mix `12-codex/`, `12-claude/`, or other agent-private context.
 5. **Markdown is canonical:** Git should contain wiki, converted markdown, provenance, scripts, docs, and routing.
-6. **RAW is usually local:** PDF/DOCX/ZIP files can stay outside Git while still being tracked in provenance.
-7. **No performative writes:** write when it improves future retrieval, traceability, or safety, not just because a file was read.
+6. **Derived reports are rebuildable:** graph, bridge, retrieval, and audit reports are optional outputs, not source of truth.
+7. **RAW is usually local:** PDF/DOCX/ZIP files can stay outside Git while still being tracked in provenance.
+8. **No auto-mutation:** graph suggestions, hooks, bridge reports, and retrieval reports do not edit canonical memory automatically.
 
 ---
 
@@ -130,8 +140,9 @@ obsidian-memory/
 - Obsidian.
 - An agent environment with skills support.
 - Recommended Obsidian plugins: Dataview, Templater, Obsidian Git.
-- Optional MCP or filesystem access for direct vault operations.
+- Python 3 for optional operator scripts.
+- Node.js for optional Codex hook scripts.
 
 ---
 
-Built from production use. Inspired by Tobi Lutke's LLM Wiki pattern and long-running agent memory systems.
+Built from production use. Inspired by Tobi Lutke's LLM Wiki pattern, MemPalace-style wings/drawers, ClaudSoul-style practical bridge checks, and GBrain-style runtime discipline.

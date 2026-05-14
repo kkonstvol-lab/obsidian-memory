@@ -15,12 +15,47 @@
     ],
     "PostToolUse": [
       {
+        "matcher": "functions.exec_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.codex/hooks/codex-post-tool-use.js\"",
+            "statusMessage": "Checking Obsidian memory reminder",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "exec_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.codex/hooks/codex-post-tool-use.js\"",
+            "statusMessage": "Checking Obsidian memory reminder",
+            "timeout": 10
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
             "command": "node \"$HOME/.codex/hooks/codex-post-tool-use.js\"",
             "statusMessage": "Checking Obsidian memory reminder",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$HOME/.codex/hooks/precompact-autosave.js\"",
+            "statusMessage": "Saving non-canonical Obsidian memory draft",
             "timeout": 10
           }
         ]

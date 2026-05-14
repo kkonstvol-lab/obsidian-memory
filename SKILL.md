@@ -64,6 +64,7 @@ vault/
 | **QUERY** | Need knowledge from wiki | Read index/schema → search → answer with evidence → propose synthesis if useful |
 | **LINT** | Weekly or before release | Check links, frontmatter, index drift, unprocessed converted files |
 | **MEMORY** | Working with agent context | Load shared + correct private memory roots in order |
+| **BRIDGE** | Checking memory-layer continuity | Run practical bridge health across RAW, wiki, graph, lessons, and drafts |
 | **RELEASE** | Before committing/pushing | Guard RAW, verify provenance, run wiki lint, check isolation |
 
 ---
@@ -127,6 +128,23 @@ Check and report:
 
 After LINT, write a `LINT` entry only when the operation changed files or produced a meaningful report worth preserving.
 
+### BRIDGE — Practical Bridge Health
+
+Use practical bridges to make layer gaps visible without inventing a full ontology or mutating the vault automatically.
+
+Recommended bridges:
+
+1. `raw -> converted`
+2. `converted -> summary`
+3. `summary -> domain`
+4. `wiki -> graph`
+5. `graph action -> review-state`
+6. `correction -> lesson`
+7. `lesson -> gate`
+8. `session draft -> memory_active`
+
+Every bridge finding should include a next script-checkable step. Known backlog can remain visible without becoming a release blocker. Read `references/bridge-health.md` for the detailed version.
+
 ### MEMORY — Loading Agent Context
 
 Determine the current `agent_id` before reading private memory.
@@ -166,6 +184,17 @@ Before committing or pushing a vault:
 
 Read `references/release-safety.md` for a concrete policy and command pattern.
 
+### OPTIONAL RUNTIME — Advisory Tools
+
+`assets/operator/` contains portable, optional helper scripts:
+
+- `operation_registry.py` — descriptive registry for operator commands and safety posture.
+- `retrieval_eval.py` — keyword retrieval query/replay checks before any semantic/vector decision.
+- `bridge_health.py` — practical bridge report and bridge/storage dashboard.
+- `skill_repo_audit.py` — advisory resolver/skill repository audit.
+
+These tools are inspired by GBrain-style runtime discipline, but they do not introduce a DB, vector layer, MCP runtime, or auto-fix behavior. Read `references/operator-runtime.md`.
+
 ---
 
 ## Core Rules
@@ -190,6 +219,8 @@ Read `references/release-safety.md` for a concrete policy and command pattern.
 - `references/wiki-schema.md` — wiki page types, frontmatter, provenance fields, INGEST/QUERY/LINT details.
 - `references/memory-schema.md` — shared/private memory roots, load order, routing, self-improvement loop.
 - `references/release-safety.md` — Git/RAW/provenance safety contract.
+- `references/bridge-health.md` — practical bridges between memory layers; not a full ontology.
+- `references/operator-runtime.md` — optional GBrain-inspired registry/retrieval/audit tools.
 - `references/setup.md` — first-time setup guide.
 - `references/graphify.md` — optional derived graph/retrieval layer; Obsidian markdown remains source of truth.
 - `references/codex-hooks.md` — optional Codex lifecycle hooks; verify runtime support before relying on them.

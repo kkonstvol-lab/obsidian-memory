@@ -63,9 +63,12 @@ function resolveMemoryRoots(vaultPath, config, agentId) {
 
 function main() {
   const input = parseJson(readStdin());
-  if (input.tool_name !== "Bash") return;
+  const toolName = input.tool_name || input.name || "";
+  const supportedTools = new Set(["Bash", "exec_command", "functions.exec_command"]);
+  if (!supportedTools.has(toolName)) return;
 
-  const command = input.tool_input && input.tool_input.command;
+  const toolInput = input.tool_input || input.input || {};
+  const command = toolInput.command || toolInput.cmd || "";
   if (!isGitPush(command)) return;
 
   const config = readConfig();

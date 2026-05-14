@@ -1,18 +1,14 @@
 # Codex Hooks — Obsidian Memory Extension
 
-Codex hooks can make the Obsidian memory layer part of the Codex lifecycle:
+Codex hooks can make Obsidian memory visible during the Codex lifecycle:
 
-- `SessionStart` loads current memory into Codex context.
-- `PostToolUse` reminds Codex to update memory after publishing work with `git push`.
-- `precompact-autosave.js` can create a non-canonical session draft before context compression or session end.
+- `SessionStart` can load bounded memory context at startup.
+- `PostToolUse` can remind the agent to update memory after `git push`.
+- `PreCompact` can write a non-canonical draft before compaction/session end.
 
-This extension is Obsidian-first. It does not depend on GitHub Issues.
+Hooks are runtime-dependent. Do not claim live automatic behavior until the current Codex runtime actually runs the hooks and `hooks-status` or equivalent smoke checks confirm it.
 
-## Runtime Status
-
-Codex hooks are experimental. The official Codex hooks documentation currently says Windows support is temporarily disabled.
-
-Use this reference to install and test the infrastructure. Only claim live automatic behavior after verifying that your Codex runtime actually runs hooks.
+---
 
 ## Files
 
@@ -23,10 +19,9 @@ Skill assets:
 - `assets/codex/hooks/precompact-autosave.js`
 - `assets/codex/hooks/tests/test_precompact_autosave.js`
 - `assets/codex/hooks/hooks.json.template`
-- `assets/codex/memory_in_progress.md`
 - `assets/codex/env.example`
 
-Installed locations:
+Installed locations normally look like:
 
 - `~/.codex/hooks/codex-session-start.js`
 - `~/.codex/hooks/codex-post-tool-use.js`
@@ -34,9 +29,11 @@ Installed locations:
 - `~/.codex/hooks.json`
 - `~/.codex/obsidian-memory.json` (optional config)
 
+---
+
 ## Configuration
 
-The hooks resolve vault settings in this order:
+Hooks resolve vault settings in this order:
 
 1. Environment variables:
    - `OBSIDIAN_VAULT_PATH`
@@ -44,6 +41,7 @@ The hooks resolve vault settings in this order:
    - `OBSIDIAN_PRIVATE_ROOT`
    - `OBSIDIAN_SHARED_ROOT`
    - `OBSIDIAN_CONTEXT_MAX_CHARS`
+   - `OBSIDIAN_DRAFT_ROOT`
 2. Optional config file: `~/.codex/obsidian-memory.json`
 3. Defaults:
    - `agentId`: `codex`
@@ -60,43 +58,68 @@ Example config:
 }
 ```
 
+---
+
 ## SessionStart
 
 The startup hook:
 
-- matches `startup`, not `resume`;
-- reads bounded snippets from:
-  - `memory_active.md`
-  - `memory_in_progress.md`
-  - recent sections of `memory_corrections.md`
-  - relevant excerpts from `memory_repos.md`, `memory_tools.md`, and `memory_decisions.md`
-- detects current git root, branch, and remote when available;
-- writes plain text to stdout, which Codex adds as extra developer context.
+- should match `startup`, not `resume`;
+- reads bounded snippets from private and shared memory;
+- detects current Git repo, branch, and remote when available;
+- writes plain text to stdout for additional context;
+- prints setup instructions if no vault path is configured.
 
-If no vault path is configured, it prints a diagnostic context block explaining how to set `OBSIDIAN_VAULT_PATH` or `~/.codex/obsidian-memory.json`.
+It must not mutate canonical memory.
+
+---
 
 ## PostToolUse
 
 The post-tool hook:
 
-- matches `Bash`;
-- inspects `tool_input.command`;
+- supports current Codex Desktop tool names: `functions.exec_command` and `exec_command`;
+- keeps a `Bash` matcher fallback for older runtimes;
+- inspects `command` or `cmd`;
 - responds only to `git push`;
-- returns JSON with `hookSpecificOutput.hookEventName = "PostToolUse"` and `additionalContext`;
-- reminds Codex to update Obsidian memory after publishing work.
+- returns `hookSpecificOutput.hookEventName = "PostToolUse"` with additional context.
 
-It does not use GitHub Issues. Links to GitHub, Linear, or Obsidian notes can be stored in `memory_in_progress.md` as optional `link` fields.
+It only reminds the agent to update memory. It does not edit memory files.
 
-## Precompact Autosave
+---
 
-The autosave hook writes a draft drawer only. It never edits `wiki/`, `wiki/wings/`, or `raw-sources/`.
+## PreCompact Autosave
+
+The autosave hook writes a draft only. It never edits `wiki/`, `wiki/wings/`, `raw-sources/`, shared memory, or canonical memory.
 
 Default draft path:
 
 - multi-agent: `{vault}/12-{agent_id}/session-drafts/`
 - override: `OBSIDIAN_DRAFT_ROOT`
 
-The draft includes timestamp, `agent_id`, active repo/task, user goal, important decisions, touched files/commands if available, unresolved next action, and source artifact. It is marked `canonical: false` and remains non-canonical until reviewed by `/session-summary` or COMPILE.
+The draft is marked:
+
+- `type: drawer-draft`
+- `status: draft`
+- `canonical: false`
+
+It remains non-canonical until a human/session-summary review copies durable facts into memory.
+
+---
+
+## Manual Fallback
+
+When hooks are not live, use local operator commands instead:
+
+```bash
+python3 12-shared/scripts/memory_operator.py session-start
+python3 12-shared/scripts/memory_operator.py session-end --note "short summary"
+python3 12-shared/scripts/memory_operator.py hooks-status
+```
+
+If `hooks-status` reports fallback-only, not-wired, matcher drift, or no recent markers, use manual fallback instead of assuming hidden hooks are active.
+
+---
 
 ## Manual Tests
 
@@ -124,7 +147,14 @@ echo '{"source":"resume","cwd":"/path/to/repo","hook_event_name":"SessionStart"}
   | node assets/codex/hooks/codex-session-start.js
 ```
 
-Test push reminder:
+Test push reminder with current Codex Desktop shape:
+
+```bash
+echo '{"tool_name":"functions.exec_command","tool_input":{"cmd":"git push origin main"},"cwd":"/path/to/repo","hook_event_name":"PostToolUse"}' \
+  | node assets/codex/hooks/codex-post-tool-use.js
+```
+
+Test old Bash fallback:
 
 ```bash
 echo '{"tool_name":"Bash","tool_input":{"command":"git push origin main"},"cwd":"/path/to/repo","hook_event_name":"PostToolUse"}' \
@@ -134,7 +164,7 @@ echo '{"tool_name":"Bash","tool_input":{"command":"git push origin main"},"cwd":
 Test non-push silence:
 
 ```bash
-echo '{"tool_name":"Bash","tool_input":{"command":"git status"},"cwd":"/path/to/repo","hook_event_name":"PostToolUse"}' \
+echo '{"tool_name":"functions.exec_command","tool_input":{"cmd":"git status"},"cwd":"/path/to/repo","hook_event_name":"PostToolUse"}' \
   | node assets/codex/hooks/codex-post-tool-use.js
 ```
 
@@ -146,6 +176,8 @@ echo '{"agent_id":"codex","session_id":"demo","user_goal":"test autosave","impor
   | node assets/codex/hooks/precompact-autosave.js
 ```
 
+---
+
 ## Safety Rules
 
 - Do not store secrets in Obsidian memory.
@@ -153,4 +185,4 @@ echo '{"agent_id":"codex","session_id":"demo","user_goal":"test autosave","impor
 - Treat `memory_active.md` as a dashboard, not a journal.
 - In multi-agent setups, write private operational files only in the current agent's private root.
 - Append to shared memory only for durable world-level facts and include source attribution.
-- Treat autosave drafts as safety nets. Do not compile them into wings without human/session-summary review.
+- Treat autosave drafts as safety nets, not canonical memory.
