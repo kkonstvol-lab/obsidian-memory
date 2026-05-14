@@ -18,11 +18,20 @@ This repository is the public, portable skill source. It reflects production les
 - create synthesis pages only when they are useful and approved;
 - lint links, frontmatter, index drift, and evidence gaps.
 
+This is the base idea of the system: Obsidian is a markdown wiki that the agent can operate like a codebase. Sources become summaries, summaries become entities/concepts/domains, and recurring questions become synthesis pages.
+
 **Agent Memory** (`12-shared/` + `12-{agent}/`) stores operating context:
 
 - `12-shared/` holds shared decisions, routing, scripts, and release policy;
 - `12-codex/`, `12-claude/`, or another `12-{agent}/` hold private agent memory;
 - private memory stays isolated; shared decisions are append-only and attributed.
+
+**Self-Improvement Loop** (`memory_corrections.md` + backlog/metrics/lessons) compounds agent quality:
+
+- record logical and process mistakes as concrete correction entries;
+- extract repeated mistakes into reviewed lessons or advisory gates;
+- keep improvement ideas in a backlog until they are intentionally shipped;
+- measure and review drift instead of relying on vibes or hidden context.
 
 **RAW + Provenance Safety** (`raw-sources/`) keeps source traceability without bloating Git:
 
@@ -98,7 +107,15 @@ obsidian-memory/
 
 ---
 
-## Optional Extensions
+## Core System And Optional Extensions
+
+Core system:
+
+- `wiki/` implements the Obsidian LLM Wiki pattern: source-backed summaries, entities, concepts, domains, and synthesis pages.
+- `12-shared/` plus `12-{agent}/` implements multi-agent operational memory with private isolation.
+- `memory_corrections.md`, improvement backlog, metrics, and optional lessons implement the self-improvement loop.
+
+Optional extensions:
 
 - `references/bridge-health.md` and `assets/operator/bridge_health.py` describe ClaudSoul-style practical bridges: script-checkable links between RAW, converted markdown, summaries, domains, graph actions, lessons, and session drafts. This is not a full ontology or persona architecture.
 - `references/operator-runtime.md` and `assets/operator/` describe GBrain-inspired runtime discipline: operation registry, retrieval replay, bridge/storage dashboard, and resolver audit. This is not a migration to GBrain, a DB layer, vector search, or MCP runtime.
@@ -145,4 +162,11 @@ obsidian-memory/
 
 ---
 
-Built from production use. Inspired by Tobi Lutke's LLM Wiki pattern, MemPalace-style wings/drawers, ClaudSoul-style practical bridge checks, and GBrain-style runtime discipline.
+## Credits / Contributors
+
+Built from production use by human operators working with Claude Code and Codex.
+
+- Core pattern: Tobi Lutke's LLM Wiki idea.
+- Memory patterns: MemPalace-style wings/drawers and long-running agent memory practice.
+- Public skill implementation and later production hardening: Claude Code and Codex, with Codex carrying the bridge-health, GBrain-inspired operator runtime, hook refresh, and public release synchronization work.
+- Design influences: ClaudSoul-style practical bridge checks and GBrain-style runtime discipline.
