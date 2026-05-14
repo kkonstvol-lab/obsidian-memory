@@ -37,9 +37,11 @@ Use generic examples such as `{YOUR_VAULT_PATH}`, `/path/to/vault`, `12-{agent}`
 
 - Update the standalone repo first.
 - Sync the monorepo copy only after standalone docs, scripts, and tests are correct.
+- Treat the README as the public showcase surface: major shipped capabilities must appear in the first-level narrative, not only in `references/`.
+- Keep brand assets final-only: commit the finished image, not prompts, caches, alternate drafts, or generated intermediate files.
 - Keep `SKILL.md` concise; move long guidance to `references/`.
 - Keep scripts deterministic and dry-run/advisory by default.
-- Any hook or operator script should have a syntax check, smoke test, or fixture test.
+- Any hook, graph, or operator script should have a syntax check, smoke test, or fixture test.
 - Do not add DB, vector, MCP, or job-runtime behavior without a separate approved plan.
 - ClaudSoul-style content here means practical bridges only, not full ontology/persona architecture.
 - GBrain-inspired content here means runtime discipline only, not migration to GBrain.
@@ -61,7 +63,9 @@ python3 assets/operator/tests/test_bridge_health.py
 python3 assets/operator/tests/test_operation_registry.py
 python3 assets/operator/tests/test_retrieval_eval.py
 python3 assets/operator/tests/test_skill_repo_audit.py
-find . \( -name '.DS_Store' -o -name '__pycache__' -o -name '*.pyc' -o -name '*.sqlite' -o -name '*.log' -o -name '.env' -o -name 'node_modules' -o -name '.git' \) -print
+python3 -m py_compile assets/graph/*.py assets/graph/tests/test_graphify_beads.py
+python3 assets/graph/tests/test_graphify_beads.py
+find . \( -name '.DS_Store' -o -name '__pycache__' -o -name '*.pyc' -o -name '*.sqlite' -o -name '*.log' -o -name '.env' -o -name 'node_modules' -o -name 'graphify-out' -o -name '.git' \) -print
 rg -n "(AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]+|sk-[A-Za-z0-9]{20,}|BEGIN (RSA|OPENSSH|EC|PRIVATE) KEY|password\s*=|api[_-]?key\s*=|secret\s*=|token\s*=)" .
 ```
 

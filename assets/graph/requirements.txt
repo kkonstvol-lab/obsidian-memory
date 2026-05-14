@@ -1,0 +1,3 @@
+# Optional only. The bundled graph tools run without external packages.
+# Install networkx if you want to inspect generated graph.json with external graph tooling.
+networkx>=3.0,<4

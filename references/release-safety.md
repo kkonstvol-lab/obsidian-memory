@@ -23,6 +23,11 @@ Local RAW cache:
 - `raw-sources/00 RAW INBOX/**`
 - source PDF/DOCX/ZIP files
 
+Public skill generated artifacts:
+
+- commit final documentation assets such as `assets/brand/*.png` only when they are intentionally part of the public README;
+- do not commit image prompts, alternate drafts, local caches, screenshots, temporary reports, `graphify-out/`, `__pycache__/`, `.env`, logs, sqlite files, or build output.
+
 Optional external archive:
 
 - leave `external_archive_uri` empty until a deliberate archive plan exists;
@@ -96,6 +101,7 @@ The guard should block:
 - unexpectedly large files above the vault's size threshold;
 - private memory writes into the wrong agent folder;
 - broken provenance for newly staged converted/wiki files.
+- generated runtime/cache artifacts that are not deliberate public assets.
 
 ---
 

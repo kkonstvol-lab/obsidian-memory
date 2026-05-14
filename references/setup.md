@@ -63,6 +63,8 @@ Copy from this skill:
 | `assets/templates/wiki-concept.md` | `templates/wiki-concept.md` | Concept template |
 | `assets/templates/wiki-synthesis.md` | `templates/wiki-synthesis.md` | Synthesis template |
 | `assets/templates/wiki-domain.md` | `templates/wiki-domain.md` | Domain MOC template |
+| `assets/codex/hooks/` | `~/.codex/hooks/` | Optional Codex lifecycle hooks |
+| `assets/codex/env.example` | shell/Codex launch environment | Optional hook configuration |
 
 ---
 
@@ -158,9 +160,22 @@ Use this manifest even when RAW files are local-only. It gives Git-tracked markd
 
 ---
 
-## Step 7: Optional MCP Configuration
+## Step 7: Optional Runtime Checks
 
-If your agent supports MCP, configure scoped filesystem or Obsidian access. Prefer separate scopes:
+Before configuring any external runtime, verify the local scripts directly:
+
+```bash
+node --check assets/codex/hooks/codex-session-start.js
+node --check assets/codex/hooks/codex-post-tool-use.js
+node --check assets/codex/hooks/precompact-autosave.js
+node assets/codex/hooks/tests/test_precompact_autosave.js
+python3 -m py_compile assets/graph/*.py assets/graph/tests/test_graphify_beads.py
+python3 assets/graph/tests/test_graphify_beads.py
+```
+
+The bundled graph scripts run without required third-party packages. `assets/graph/requirements.txt` is optional and only for external graph inspection tooling.
+
+If your agent supports MCP or scoped filesystem access, configure narrow scopes:
 
 - wiki scope: `wiki/`
 - shared memory scope: `12-shared/`

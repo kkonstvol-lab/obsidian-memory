@@ -64,6 +64,7 @@ vault/
 | **QUERY** | Need knowledge from wiki | Read index/schema → search → answer with evidence → propose synthesis if useful |
 | **LINT** | Weekly or before release | Check links, frontmatter, index drift, unprocessed converted files |
 | **MEMORY** | Working with agent context | Load shared + correct private memory roots in order |
+| **HOOKS** | Runtime memory integration | Configure or verify SessionStart, PostToolUse, and PreCompact |
 | **BRIDGE** | Checking memory-layer continuity | Run practical bridge health across RAW, wiki, graph, lessons, and drafts |
 | **RELEASE** | Before committing/pushing | Guard RAW, verify provenance, run wiki lint, check isolation |
 
@@ -145,6 +146,17 @@ Recommended bridges:
 
 Every bridge finding should include a next script-checkable step. Known backlog can remain visible without becoming a release blocker. Read `references/bridge-health.md` for the detailed version.
 
+### HOOKS — Runtime Memory Integration
+
+Codex lifecycle hooks are optional but first-class runtime assets:
+
+1. `SessionStart` loads bounded active/shared/correction context at startup.
+2. `PostToolUse` notices important tool events such as `git push` and reminds the agent to update memory.
+3. `PreCompact` writes a non-canonical draft before context compaction.
+4. `hooks.json.template` provides a starting wiring pattern.
+
+Hooks are live only after local runtime configuration and `hooks-status` or equivalent smoke checks confirm they run. They must not edit `wiki/`, `raw-sources/`, shared memory, or canonical memory automatically. Read `references/codex-hooks.md`.
+
 ### MEMORY — Loading Agent Context
 
 Determine the current `agent_id` before reading private memory.
@@ -222,7 +234,7 @@ These tools are inspired by GBrain-style runtime discipline, but they do not int
 - `references/bridge-health.md` — practical bridges between memory layers; not a full ontology.
 - `references/operator-runtime.md` — optional GBrain-inspired registry/retrieval/audit tools.
 - `references/setup.md` — first-time setup guide.
-- `references/graphify.md` — optional derived graph/retrieval layer; Obsidian markdown remains source of truth.
+- `references/graphify.md` — optional Graphify-inspired derived graph/retrieval layer; Obsidian markdown remains source of truth.
 - `references/codex-hooks.md` — optional Codex lifecycle hooks; verify runtime support before relying on them.
 - `assets/vault-CLAUDE.md` — drop-in schema file for `wiki/CLAUDE.md`.
 - `assets/templates/` — page templates for summary/entity/concept/synthesis/domain pages plus optional MemPalace-style wings/drawers.

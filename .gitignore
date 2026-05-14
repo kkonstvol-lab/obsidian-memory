@@ -1,0 +1,13 @@
+.DS_Store
+__pycache__/
+*.pyc
+*.pyo
+*.log
+*.sqlite
+*.sqlite3
+.env
+node_modules/
+graphify-out/
+output/
+tmp/
+cache/

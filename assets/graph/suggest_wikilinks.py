@@ -14,7 +14,7 @@ import os
 from itertools import combinations
 from pathlib import Path
 
-from networkx.readwrite import json_graph
+from _graph_utils import node_link_graph
 
 GRAPH_DIR = Path(__file__).resolve().parent
 OUT_DIR = Path(os.environ.get("GRAPHIFY_OUT", GRAPH_DIR / "graphify-out")).resolve()
@@ -143,10 +143,7 @@ def render_section(title: str, items: list[dict], empty: str) -> list[str]:
 
 review_state = load_review_state(REVIEW_STATE)
 data = json.loads(GRAPH.read_text(encoding="utf-8"))
-try:
-    G = json_graph.node_link_graph(data, edges="links")
-except TypeError:
-    G = json_graph.node_link_graph(data)
+G = node_link_graph(data)
 
 communities: dict[int, list[str]] = {}
 for nid, d in G.nodes(data=True):

@@ -19,7 +19,17 @@ import os
 import re
 from pathlib import Path
 
-from graphify import analyze, build, cluster, report
+from _graph_utils import (
+    build_graph,
+    connected_communities,
+    generate_report,
+    god_nodes,
+    node_link_data,
+    score_communities,
+    suggest_questions,
+    surprising_connections,
+    validate_extraction,
+)
 
 GRAPH_DIR = Path(__file__).resolve().parent
 VAULT = Path(os.environ.get("GRAPHIFY_VAULT", GRAPH_DIR.parent.parent)).resolve()
@@ -291,7 +301,7 @@ for node_id, node in list(nodes.items()):
         edges.append(make_edge(node_id, temporal_id, "valid_during", "EXTRACTED", node.get("source_file", ""), review_state))
 
 extraction = {"nodes": list(nodes.values()), "edges": edges}
-errors = build.validate_extraction(extraction)
+errors = validate_extraction(extraction)
 if errors:
     print(f"Validation errors ({len(errors)}):")
     for e in errors[:5]:
@@ -301,13 +311,12 @@ if errors:
 print(f"corpus: {len(files)} files · {total_words:,} words")
 print(f"graph:  {len(nodes)} nodes · {len(edges)} edges")
 
-G = build.build([extraction], directed=False)
-communities = cluster.cluster(G)
-cohesion = cluster.score_all(G, communities)
-community_labels = {cid: f"community-{cid}" for cid in communities}
-gods = analyze.god_nodes(G, top_n=10)
-surprises = analyze.surprising_connections(G, communities, top_n=7)
-questions = analyze.suggest_questions(G, communities, community_labels, top_n=7)
+G = build_graph([extraction])
+communities = connected_communities(G)
+cohesion = score_communities(G, communities)
+gods = god_nodes(G, top_n=10)
+surprises = surprising_connections(G, communities, top_n=7)
+questions = suggest_questions(G, communities, top_n=7)
 
 print(f"result: {G.number_of_nodes()} nodes · {G.number_of_edges()} edges · {len(communities)} communities")
 
@@ -316,24 +325,20 @@ for cid, nids in communities.items():
         if G.has_node(nid):
             G.nodes[nid]["community"] = cid
 
-md = report.generate(
+md = generate_report(
     G,
     communities=communities,
     cohesion_scores=cohesion,
-    community_labels=community_labels,
     god_node_list=gods,
     surprise_list=surprises,
     detection_result={"total_files": len(files), "total_words": total_words},
-    token_cost={"total_usd": 0.0, "notes": "phase-1: no LLM"},
     root=str(VAULT),
     suggested_questions=questions,
 )
 (OUT / "GRAPH_REPORT.md").write_text(md, encoding="utf-8")
 print(f"wrote {OUT}/GRAPH_REPORT.md")
 
-import networkx as nx
-
-data = nx.node_link_data(G, edges="links")
+data = node_link_data(G)
 (OUT / "graph.json").write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
 print(f"wrote {OUT}/graph.json")
 

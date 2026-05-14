@@ -1,8 +1,8 @@
-# Graphify Knowledge Graph
+# Graphify-Inspired Knowledge Graph
 
-Graphify is an optional derived layer over `wiki/` and `raw-sources/`. In this skill it is paired with a Beads-inspired review queue: graph extraction suggests actions, but human/review-state decisions decide what becomes canonical wiki structure.
+This skill ships a local, dependency-light graph layer inspired by Graphify and paired with a Beads-inspired review queue. It does not require the external `graphify` package, does not install Beads, and does not run an MCP server.
 
-Obsidian remains the canonical source of truth; generated graph files can be deleted and rebuilt.
+Obsidian Markdown remains the source of truth. Generated graph outputs are derived reports that can be deleted and rebuilt.
 
 ## What This Skill Ships
 
@@ -11,43 +11,31 @@ Copy `assets/graph/` into the graph folder in your vault:
 - Single-agent vault: `memory/graph/`
 - Multi-agent vault: `12-shared/graph/`
 
-The bundled graph layer includes:
+Bundled files:
 
-- `extract_vault.py` — builds `graphify-out/graph.json`, `GRAPH_REPORT.md`, and missing target suggestions.
-- `suggest_wikilinks.py` — builds `graphify-out/missing-links.md` and `GRAPH_READY.md`.
-- `hybrid_retrieval.py` — builds `graphify-out/retrieval_candidates.jsonl` for a specific query.
-- `review-state.jsonl` — append-only human review state.
-- `tests/test_graphify_beads.py` — fixture test for stable IDs, review-state behavior, and raw-source safety.
+- `_graph_utils.py` - small dependency-free graph helper used by the scripts.
+- `extract_vault.py` - builds `graphify-out/graph.json`, `GRAPH_REPORT.md`, and missing target suggestions.
+- `suggest_wikilinks.py` - builds `graphify-out/missing-links.md` and `GRAPH_READY.md`.
+- `hybrid_retrieval.py` - builds `graphify-out/retrieval_candidates.jsonl` for a query.
+- `review-state.jsonl` - append-only review state.
+- `requirements.txt` - optional packages for external graph inspection; not required for the bundled fixture test.
+- `tests/test_graphify_beads.py` - fixture test for stable IDs, review-state behavior, and raw-source safety.
 
-## Beads-Style Review Queue
+## Review Queue
 
-The graph layer borrows operational patterns from Beads without installing Beads, Dolt, or `.beads/`.
+The graph layer borrows operational patterns from Beads without adding a `.beads/` runtime.
 
-Nodes include typed metadata:
+Generated actions use stable IDs like `gq-a1b2c3d4e5` and can include:
 
-- `node_type`: `wiki`, `raw_source`, `missing`, `domain`, `summary`, `entity`, `concept`, or `document`
-- `source_path`
-- `stable_id`
-- `valid_from`, `valid_to`, `supersedes`, `superseded_by`
-- `claim_id`, `claim_value`, `has_evidence`
+- `create_missing_page`
+- `add_wikilink`
+- `review_inferred_edge`
+- `attach_orphan`
+- `create_moc_candidate`
+- `add_source_evidence`
+- `review_temporal_conflict`
 
-Edges include typed metadata:
-
-- `edge_id`
-- `relation`
-- `confidence`
-- `source_file`
-- `review_status`
-
-Generated actions use stable IDs like `gq-a1b2c3d4e5`.
-
-MemPalace-derived relation/action types:
-
-- `derived_from` — wiki node points to raw source or drawer evidence
-- `supersedes` — newer fact/decision replaces an older one
-- `valid_during` — node is valid during a temporal period
-- `add_source_evidence` — review action for orphan claims without explicit evidence
-- `review_temporal_conflict` — review action for conflicting active facts
+Graph suggestions are review candidates. They do not become canonical wiki edits until a human/operator accepts them and edits the wiki intentionally.
 
 ## Review State
 
@@ -68,17 +56,17 @@ Allowed statuses:
 
 ```bash
 cd {VAULT}/memory/graph
-python extract_vault.py
-python suggest_wikilinks.py
-python hybrid_retrieval.py "current project priorities"
+python3 extract_vault.py
+python3 suggest_wikilinks.py
+python3 hybrid_retrieval.py "current project priorities"
 ```
 
 For multi-agent vaults:
 
 ```bash
 cd {VAULT}/12-shared/graph
-python extract_vault.py
-python suggest_wikilinks.py
+python3 extract_vault.py
+python3 suggest_wikilinks.py
 ```
 
 Generated outputs:
@@ -97,39 +85,35 @@ Generated outputs:
 - Add wikilinks only after human review.
 - Mark rejected suggestions in `review-state.jsonl`; do not delete them from generated reports by hand.
 - Cycles in a knowledge graph are not automatically errors.
+- RAW cache files should be routed through converted markdown, summaries, or provenance before becoming wiki links.
 
 ## Validate
 
 ```bash
 cd {VAULT}/memory/graph
-python -m py_compile extract_vault.py suggest_wikilinks.py tests/test_graphify_beads.py
-python -m py_compile hybrid_retrieval.py
-python tests/test_graphify_beads.py
+python3 -m py_compile *.py tests/test_graphify_beads.py
+python3 tests/test_graphify_beads.py
 ```
 
 The fixture test checks:
 
-- stable node, edge, and action IDs between runs
-- `GRAPH_READY.md` sections
-- `review-state.jsonl` filtering
-- provenance and temporal review actions
-- hybrid retrieval candidate ranking
-- no writes to `raw-sources/`
+- stable node, edge, and action IDs between runs;
+- `GRAPH_READY.md` sections;
+- `review-state.jsonl` filtering;
+- provenance and temporal review actions;
+- hybrid retrieval candidate ranking;
+- no writes to `raw-sources/`.
 
-## MCP
+## Optional External Consumers
 
-If using graphify MCP, point it to the generated `graph.json`:
+The public skill does not ship an MCP runtime. If another local tool wants to consume the derived graph, point that tool at the generated JSON:
 
-```json
-{
-  "mcpServers": {
-    "graphify": {
-      "command": "python",
-      "args": ["-m", "graphify.serve", "memory/graph/graphify-out/graph.json"],
-      "type": "stdio"
-    }
-  }
-}
+```text
+{VAULT}/memory/graph/graphify-out/graph.json
 ```
 
-For multi-agent vaults, use `12-shared/graph/graphify-out/graph.json`.
+For multi-agent vaults, use:
+
+```text
+{VAULT}/12-shared/graph/graphify-out/graph.json
+```
