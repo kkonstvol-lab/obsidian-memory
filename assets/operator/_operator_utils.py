@@ -88,4 +88,3 @@ def approval_packet(
         f"- Verification: {'; '.join(verification or ['git status --short'])}",
     ]
     return "\n".join(lines)
-
