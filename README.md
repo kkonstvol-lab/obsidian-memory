@@ -61,7 +61,7 @@ In mature deployments this loop can be scheduled, for example as a daily review 
 
 ## Install
 
-Claude Code-style install:
+Claude/Codex-style skill install:
 
 ```bash
 git clone https://github.com/kkonstvol-lab/obsidian-memory ~/.claude/skills/obsidian-memory
