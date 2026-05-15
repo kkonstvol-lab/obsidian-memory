@@ -171,9 +171,18 @@ node --check assets/codex/hooks/precompact-autosave.js
 node assets/codex/hooks/tests/test_precompact_autosave.js
 python3 -m py_compile assets/graph/*.py assets/graph/tests/test_graphify_beads.py
 python3 assets/graph/tests/test_graphify_beads.py
+python3 -m py_compile assets/operator/*.py
+python3 assets/operator/tests/test_branch_close_pack.py
+python3 assets/operator/tests/test_decision_review_board.py
+python3 assets/operator/tests/test_lesson_lint.py
+python3 assets/operator/tests/test_lesson_review_board.py
+python3 assets/operator/tests/test_release_status.py
+python3 assets/operator/tests/test_release_surface_check.py
 ```
 
 The bundled graph scripts run without required third-party packages. `assets/graph/requirements.txt` is optional and only for external graph inspection tooling.
+
+The bundled Control Tower scripts are optional, read-only by default, and tested with synthetic fixtures. Real private lessons and decision-review state belong under `12-{agent}/` in the user's vault, not in this public skill repository.
 
 If your agent supports MCP or scoped filesystem access, configure narrow scopes:
 

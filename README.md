@@ -34,6 +34,10 @@ Agents record process mistakes, extract repeated patterns into reviewed lessons,
 
 `SessionStart`, `PostToolUse`, and `PreCompact` connect runtime events to bounded memory loading, push reminders, and safe pre-compaction drafts.
 
+**Operator Control Tower / Workflow Discipline** (`assets/operator/`)
+
+Read-only release status, branch-close handoff, decision review, lesson review, and public release-surface checks help agents close work without losing decisions or over-promoting drafts.
+
 **Graph / Bridge / Operator Tools** (`assets/graph/` + `assets/operator/`)
 
 Derived graph reports, bridge health checks, retrieval replay, operation registry, and skill resolver audits make memory drift visible without auto-mutating the vault.
@@ -95,7 +99,7 @@ obsidian-memory/
     brand/                      README visual assets
     codex/hooks/                SessionStart, PostToolUse, PreCompact
     graph/                      dependency-light derived graph tools
-    operator/                   bridge/retrieval/audit tools
+    operator/                   bridge/retrieval/audit/control tower tools
     templates/                  drop-in Obsidian templates
 ```
 
@@ -118,8 +122,21 @@ See `references/codex-hooks.md`.
 - `review-state.jsonl` is append-only. Suggestions become canonical wiki links only after review.
 - `assets/operator/bridge_health.py` reports practical bridge gaps such as `raw -> converted`, `converted -> summary`, `summary -> domain`, and `graph action -> review-state`.
 - `assets/operator/retrieval_eval.py`, `operation_registry.py`, and `skill_repo_audit.py` are advisory tools inspired by GBrain-style runtime discipline.
+- `assets/operator/release_status.py`, `branch_close_pack.py`, `release_surface_check.py`, `decision_review_board.py`, and `lesson_review_board.py` form a portable Operator Control Tower: read-only packets for release readiness, branch closure, public surface drift, durable decision candidates, and lesson promotion review.
 
 No DB, vector store, MCP runtime, background job system, or automatic repair loop is shipped by this skill.
+
+## Operator Control Tower
+
+The Control Tower layer is intentionally advisory:
+
+- `release-status` checks repo identity, branch/upstream, push boundary, staged/unstaged files, RAW binary risk, and post-push obligations.
+- `branch-close` builds a compact handoff skeleton with repo state, recent commits, memory context, bridge/lesson backlog, risks, and verification commands.
+- `release-surface-check` verifies public-facing skill markers such as README narrative, hooks visibility, graph/bridge visibility, license, `AGENTS.md`, and Codex co-author attribution.
+- `decision-review` surfaces candidates that may deserve durable routing into shared decisions, wiki synthesis, runbooks, lessons, or public surface notes.
+- `lesson-review` keeps private operational lessons in review state; promotion to pattern/principle remains human-reviewed and never automatic.
+
+The lifecycle state for decision review is append-only and belongs under the local/private `12-{agent}/decision-review/` area. Do not publish real review-state or private lesson content.
 
 ## Safety Model
 
@@ -163,6 +180,7 @@ Restart the agent app after installing or updating skills.
 - `references/graphify.md` - derived graph/review queue.
 - `references/bridge-health.md` - practical bridge health.
 - `references/operator-runtime.md` - advisory runtime tools.
+- `references/workflow-discipline.md` - Control Tower, branch close, decision review, and lesson review.
 - `references/release-safety.md` - RAW, provenance, Git, and artifact safety.
 
 ## Credits / Contributors

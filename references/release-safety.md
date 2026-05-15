@@ -124,6 +124,8 @@ It should exit non-zero on blocking failures and may print non-blocking lint deb
 If you do not have a local `memory_operator.py`, run the portable public checks directly:
 
 ```bash
+python3 assets/operator/release_status.py --repo . --intent public-obsidian-memory
+python3 assets/operator/release_surface_check.py --profile public-skill --standalone .
 python3 assets/operator/bridge_health.py --vault /path/to/vault --status
 python3 assets/operator/retrieval_eval.py report
 python3 assets/operator/operation_registry.py
@@ -181,3 +183,13 @@ Prefer meaningful groups:
 3. Provenance/index/policy updates.
 
 Before each commit, inspect staged files and confirm no RAW binaries are staged.
+
+For long branches or public releases, add a Control Tower pass before the final claim:
+
+```bash
+python3 assets/operator/branch_close_pack.py --root /path/to/vault --agent codex --md
+python3 assets/operator/decision_review_board.py --root /path/to/vault --agent codex --md
+python3 assets/operator/lesson_review_board.py --root /path/to/vault --agent codex --json
+```
+
+These commands are read-only unless an explicit approval-gated `decision-review --mark` is used.

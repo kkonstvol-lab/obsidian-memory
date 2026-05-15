@@ -42,6 +42,7 @@ Use generic examples such as `{YOUR_VAULT_PATH}`, `/path/to/vault`, `12-{agent}`
 - Keep `SKILL.md` concise; move long guidance to `references/`.
 - Keep scripts deterministic and dry-run/advisory by default.
 - Any hook, graph, or operator script should have a syntax check, smoke test, or fixture test.
+- Keep Control Tower / workflow discipline tools portable: use synthetic fixtures, `12-{agent}` examples, and read-only defaults; never publish real `12-codex` decision state or lesson content.
 - Do not add DB, vector, MCP, or job-runtime behavior without a separate approved plan.
 - ClaudSoul-style content here means practical bridges only, not full ontology/persona architecture.
 - GBrain-inspired content here means runtime discipline only, not migration to GBrain.
@@ -60,7 +61,13 @@ node --check assets/codex/hooks/precompact-autosave.js
 node assets/codex/hooks/tests/test_precompact_autosave.js
 python3 -m py_compile assets/operator/*.py
 python3 assets/operator/tests/test_bridge_health.py
+python3 assets/operator/tests/test_branch_close_pack.py
+python3 assets/operator/tests/test_decision_review_board.py
+python3 assets/operator/tests/test_lesson_lint.py
+python3 assets/operator/tests/test_lesson_review_board.py
 python3 assets/operator/tests/test_operation_registry.py
+python3 assets/operator/tests/test_release_status.py
+python3 assets/operator/tests/test_release_surface_check.py
 python3 assets/operator/tests/test_retrieval_eval.py
 python3 assets/operator/tests/test_skill_repo_audit.py
 python3 -m py_compile assets/graph/*.py assets/graph/tests/test_graphify_beads.py

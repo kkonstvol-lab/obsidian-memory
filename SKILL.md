@@ -66,6 +66,7 @@ vault/
 | **MEMORY** | Working with agent context | Load shared + correct private memory roots in order |
 | **HOOKS** | Runtime memory integration | Configure or verify SessionStart, PostToolUse, and PreCompact |
 | **BRIDGE** | Checking memory-layer continuity | Run practical bridge health across RAW, wiki, graph, lessons, and drafts |
+| **TOWER** | Release and closure discipline | Run release-status, branch-close, release-surface-check, decision-review, and lesson-review |
 | **RELEASE** | Before committing/pushing | Guard RAW, verify provenance, run wiki lint, check isolation |
 
 ---
@@ -157,6 +158,20 @@ Codex lifecycle hooks are optional but first-class runtime assets:
 
 Hooks are live only after local runtime configuration and `hooks-status` or equivalent smoke checks confirm they run. They must not edit `wiki/`, `raw-sources/`, shared memory, or canonical memory automatically. Read `references/codex-hooks.md`.
 
+### TOWER — Operator Control Tower And Workflow Discipline
+
+Use the Control Tower layer before public releases, branch closeout, or large memory-operator changes.
+
+Recommended read-only checks:
+
+1. `release-status` — repo identity, branch/upstream, push boundary, staged files, RAW binary risk, and post-push obligations.
+2. `branch-close` — compact handoff with done candidates, remaining candidates, risks, backlog, and verification commands.
+3. `release-surface-check` — public README/hooks/graph/license/attribution visibility.
+4. `decision-review` — candidates for durable routing into shared decisions, wiki synthesis, runbooks, private lessons, or public surface notes.
+5. `lesson-review` — private operational lessons before any promotion from case to pattern/principle.
+
+These reports are advisory by default. `decision-review-mark` is the only lifecycle write in this layer, and it must be approval-gated and append-only under `12-{agent}/decision-review/`. Do not publish private review-state or lesson content. Read `references/workflow-discipline.md`.
+
 ### MEMORY — Loading Agent Context
 
 Determine the current `agent_id` before reading private memory.
@@ -233,6 +248,7 @@ These tools are inspired by GBrain-style runtime discipline, but they do not int
 - `references/release-safety.md` — Git/RAW/provenance safety contract.
 - `references/bridge-health.md` — practical bridges between memory layers; not a full ontology.
 - `references/operator-runtime.md` — optional GBrain-inspired registry/retrieval/audit tools.
+- `references/workflow-discipline.md` — portable Control Tower, branch close, decision review, and lesson review.
 - `references/setup.md` — first-time setup guide.
 - `references/graphify.md` — optional Graphify-inspired derived graph/retrieval layer; Obsidian markdown remains source of truth.
 - `references/codex-hooks.md` — optional Codex lifecycle hooks; verify runtime support before relying on them.
