@@ -29,7 +29,81 @@ function readConfig() {
 
 function isGitPush(command) {
   if (!command || typeof command !== "string") return false;
-  return /(^|[;&|]\s*|\r?\n\s*)git(\s+-C\s+("[^"]+"|'[^']+'|\S+))?\s+push\b/.test(command);
+  const tokens = shellTokens(command);
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index];
+    if (token.type === "operator" || !isSegmentStart(tokens, index) || !isGitToken(token.value)) continue;
+
+    let cursor = index + 1;
+    if (tokens[cursor]?.value === "-C") {
+      cursor += 2;
+    } else if (tokens[cursor]?.value?.startsWith("-C") && tokens[cursor].value.length > 2) {
+      cursor += 1;
+    }
+
+    if (tokens[cursor]?.value === "push") return true;
+  }
+  return false;
+}
+
+function isGitToken(value) {
+  return value === "git" || value.endsWith("/git");
+}
+
+function isSegmentStart(tokens, index) {
+  if (index === 0) return true;
+  return tokens[index - 1]?.type === "operator";
+}
+
+function shellTokens(command) {
+  const tokens = [];
+  let current = "";
+  let quote = "";
+  let escaped = false;
+
+  function flush() {
+    if (!current) return;
+    tokens.push({ type: "word", value: current });
+    current = "";
+  }
+
+  for (const char of String(command)) {
+    if (escaped) {
+      current += char;
+      escaped = false;
+      continue;
+    }
+    if (quote) {
+      if (char === quote) {
+        quote = "";
+      } else if (char === "\\" && quote === '"') {
+        escaped = true;
+      } else {
+        current += char;
+      }
+      continue;
+    }
+    if (char === "\\") {
+      escaped = true;
+      continue;
+    }
+    if (char === "'" || char === '"') {
+      quote = char;
+      continue;
+    }
+    if (/\s/.test(char)) {
+      flush();
+      continue;
+    }
+    if (";&|()\n".includes(char)) {
+      flush();
+      tokens.push({ type: "operator", value: char });
+      continue;
+    }
+    current += char;
+  }
+  flush();
+  return tokens;
 }
 
 function resolveMemoryRoots(vaultPath, config, agentId) {
@@ -107,4 +181,8 @@ function main() {
   );
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = { isGitPush, shellTokens };

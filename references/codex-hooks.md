@@ -168,6 +168,13 @@ echo '{"tool_name":"functions.exec_command","tool_input":{"cmd":"git status"},"c
   | node assets/codex/hooks/codex-post-tool-use.js
 ```
 
+Test quoted text containing `git push` stays silent:
+
+```bash
+echo '{"tool_name":"functions.exec_command","tool_input":{"cmd":"rg -n '\''\"status\": \"ok\"|git push|\\\"command\\\"'\'' /tmp"},"cwd":"/path/to/repo","hook_event_name":"PostToolUse"}' \
+  | node assets/codex/hooks/codex-post-tool-use.js
+```
+
 Test precompact autosave:
 
 ```bash

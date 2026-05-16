@@ -58,6 +58,7 @@ git diff --check
 node --check assets/codex/hooks/codex-session-start.js
 node --check assets/codex/hooks/codex-post-tool-use.js
 node --check assets/codex/hooks/precompact-autosave.js
+node assets/codex/hooks/tests/test_codex_post_tool_use.js
 node assets/codex/hooks/tests/test_precompact_autosave.js
 python3 -m py_compile assets/operator/*.py
 python3 assets/operator/tests/test_bridge_health.py
