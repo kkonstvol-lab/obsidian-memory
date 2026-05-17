@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Turn an Obsidian vault into a Markdown/Git-based memory system for AI agents: a source-backed LLM wiki, operational agent memory, lifecycle hooks, graph review tools, and release safety checks.
+Turn an Obsidian vault into a Markdown/Git-based memory system for AI agents: a source-backed LLM wiki, operational agent memory, lifecycle hooks, graph review tools, runtime safety contracts, memory qualification gates, and release safety checks.
 
 ![Obsidian Memory architecture: wiki graph, agent memory, hooks, and provenance](assets/brand/obsidian-memory-hero.png)
 
@@ -33,6 +33,14 @@ Agents record process mistakes, extract repeated patterns into reviewed lessons,
 **Codex Lifecycle Hooks** (`assets/codex/hooks/`)
 
 `SessionStart`, `PostToolUse`, and `PreCompact` connect runtime events to bounded memory loading, push reminders, and safe pre-compaction drafts.
+
+**Runtime Safety Contract**
+
+Runtime memory, when an operator builds it locally, stays optional, private, disposable, and outside the vault. Capture, query, dynamic context, promotion, and auto-proposal switches should start disabled and become usable only after reviewed gate evidence plus explicit operator approval.
+
+**Memory Qualification**
+
+New retrieval or context patterns must earn their way in: golden set, baseline contest, gap report, then the smallest read-only trial that addresses an observed failure mode. OpenViking-style ideas are treated as reference patterns, not as a dependency.
 
 **Operator Control Tower / Workflow Discipline** (`assets/operator/`)
 
@@ -116,6 +124,20 @@ Hooks are conservative by design. They do not mutate `wiki/`, `raw-sources/`, sh
 
 See `references/codex-hooks.md`.
 
+## Runtime Safety And Qualification
+
+This skill documents a public contract for optional runtime memory layers without publishing a private runtime engine:
+
+- Markdown and Git remain the source of truth.
+- Runtime state stays local, private, disposable, and outside the vault.
+- Dynamic context is advisory only; it is not an instruction layer.
+- Promotion starts as an immutable proposal. Canonical apply requires explicit approval.
+- Auto-promotion means proposal creation only, never direct canonical mutation.
+- Retention cleanup may touch runtime-local artifacts only.
+- New retrieval/context layers require qualification evidence before adoption.
+
+Read `references/operator-runtime.md` for the runtime safety contract and `references/memory-qualification.md` for qualification-first retrieval trials.
+
 ## Graph, Bridges, And Operator Tools
 
 - `assets/graph/` is a local Graphify-inspired derived layer. It builds `graph.json`, `GRAPH_REPORT.md`, review queues, and retrieval candidates without requiring the external `graphify` package.
@@ -124,7 +146,7 @@ See `references/codex-hooks.md`.
 - `assets/operator/retrieval_eval.py`, `operation_registry.py`, and `skill_repo_audit.py` are advisory tools inspired by GBrain-style runtime discipline.
 - `assets/operator/release_status.py`, `branch_close_pack.py`, `release_surface_check.py`, `decision_review_board.py`, and `lesson_review_board.py` form a portable Operator Control Tower: read-only packets for release readiness, branch closure, public surface drift, durable decision candidates, and lesson promotion review.
 
-No DB, vector store, MCP runtime, background job system, or automatic repair loop is shipped by this skill.
+No DB, vector store, MCP runtime, background job system, dynamic context engine, or automatic repair loop is shipped by this skill.
 
 ## Operator Control Tower
 
@@ -146,6 +168,9 @@ The lifecycle state for decision review is append-only and belongs under the loc
 4. Agent-private memory stays isolated in `12-{agent}/`.
 5. Derived graph, bridge, retrieval, and audit reports can be deleted and rebuilt.
 6. Hooks and operator scripts do not auto-promote suggestions into canonical wiki or memory.
+7. Optional runtime layers are local/private/disposable and stay outside the vault.
+8. Dynamic context is advisory only and never overrides direct source reading.
+9. New retrieval/context patterns need measured gaps and safety-zero trials before adoption.
 
 ## Install
 
@@ -180,6 +205,7 @@ Restart the agent app after installing or updating skills.
 - `references/graphify.md` - derived graph/review queue.
 - `references/bridge-health.md` - practical bridge health.
 - `references/operator-runtime.md` - advisory runtime tools.
+- `references/memory-qualification.md` - golden-set, baseline, gap, and read-only trial gates.
 - `references/workflow-discipline.md` - Control Tower, branch close, decision review, and lesson review.
 - `references/release-safety.md` - RAW, provenance, Git, and artifact safety.
 

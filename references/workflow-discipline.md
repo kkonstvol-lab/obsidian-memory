@@ -4,6 +4,8 @@ This layer makes release, branch-close, decision-capture, and lesson-review work
 
 It is portable and advisory. Markdown/Git remain the source of truth; private runtime state stays private.
 
+For retrieval or dynamic-context changes, pair this workflow with `memory-qualification.md`: qualify the gap first, then trial the smallest read-only pattern.
+
 ---
 
 ## What This Adds
@@ -173,6 +175,7 @@ Do not publish:
 
 - real `12-codex/lessons/*.md`;
 - real `12-codex/decision-review/review-state.jsonl`;
+- local runtime reports, approval manifests, promotion proposals, or proposal lifecycle records;
 - `session-drafts`;
 - `hook-runs`;
 - local reports;

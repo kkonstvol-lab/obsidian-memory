@@ -37,15 +37,27 @@ Use generic examples such as `{YOUR_VAULT_PATH}`, `/path/to/vault`, `12-{agent}`
 
 - Update the standalone repo first.
 - Sync the monorepo copy only after standalone docs, scripts, and tests are correct.
+- The monorepo copy must match the standalone skill exactly except for ignored runtime artifacts such as `.git`, caches, and platform junk.
 - Treat the README as the public showcase surface: major shipped capabilities must appear in the first-level narrative, not only in `references/`.
 - Keep brand assets final-only: commit the finished image, not prompts, caches, alternate drafts, or generated intermediate files.
 - Keep `SKILL.md` concise; move long guidance to `references/`.
 - Keep scripts deterministic and dry-run/advisory by default.
+- Separate shipped capabilities from recommended contracts and internal production lessons. Do not imply that a documented private/local runtime pattern is bundled as a ready engine.
 - Any hook, graph, or operator script should have a syntax check, smoke test, or fixture test.
 - Keep Control Tower / workflow discipline tools portable: use synthetic fixtures, `12-{agent}` examples, and read-only defaults; never publish real `12-codex` decision state or lesson content.
 - Do not add DB, vector, MCP, or job-runtime behavior without a separate approved plan.
+- Do not add claims about bundled semantic storage, default dynamic context injection, direct canonical writes, all-agent memory access, or OpenViking as a dependency.
 - ClaudSoul-style content here means practical bridges only, not full ontology/persona architecture.
 - GBrain-inspired content here means runtime discipline only, not migration to GBrain.
+
+## Docs Integrity Rules
+
+- Required public files must exist before release: `README.md`, `SKILL.md`, `AGENTS.md`, `references/operator-runtime.md`, `references/workflow-discipline.md`, `references/release-safety.md`, and `references/memory-qualification.md`.
+- `README.md` and `SKILL.md` must link to `references/memory-qualification.md` when qualification or runtime shadow work is mentioned.
+- Relative Markdown links must resolve inside the repository.
+- The README hero image path must exist.
+- Run a privacy scan, a forbidden-claim scan, and a secret-pattern scan before commit and again after standalone/monorepo sync.
+- If a scan flags docs that intentionally describe prohibited wording, rewrite the wording instead of allowlisting the hit.
 
 ---
 

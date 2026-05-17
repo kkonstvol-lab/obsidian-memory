@@ -67,6 +67,8 @@ vault/
 | **HOOKS** | Runtime memory integration | Configure or verify SessionStart, PostToolUse, and PreCompact |
 | **BRIDGE** | Checking memory-layer continuity | Run practical bridge health across RAW, wiki, graph, lessons, and drafts |
 | **TOWER** | Release and closure discipline | Run release-status, branch-close, release-surface-check, decision-review, and lesson-review |
+| **QUALIFY** | Testing retrieval/context ideas | Golden set -> baseline contest -> gap report -> minimal read-only trial |
+| **RUNTIME SHADOW** | Evaluating optional dynamic context | Run advisory shadow/canary sessions while runtime switches remain disabled |
 | **RELEASE** | Before committing/pushing | Guard RAW, verify provenance, run wiki lint, check isolation |
 
 ---
@@ -158,6 +160,8 @@ Codex lifecycle hooks are optional but first-class runtime assets:
 
 Hooks are live only after local runtime configuration and `hooks-status` or equivalent smoke checks confirm they run. They must not edit `wiki/`, `raw-sources/`, shared memory, or canonical memory automatically. Read `references/codex-hooks.md`.
 
+If an operator adds a local runtime memory layer around these hooks, treat that layer as private, disposable, and outside the vault. Capture, query, dynamic context, promotion, and auto-proposal switches should start disabled. Dynamic context is advisory only: it may suggest evidence candidates, but it never replaces direct source reading and never becomes instructions.
+
 ### TOWER — Operator Control Tower And Workflow Discipline
 
 Use the Control Tower layer before public releases, branch closeout, or large memory-operator changes.
@@ -171,6 +175,34 @@ Recommended read-only checks:
 5. `lesson-review` — private operational lessons before any promotion from case to pattern/principle.
 
 These reports are advisory by default. `decision-review-mark` is the only lifecycle write in this layer, and it must be approval-gated and append-only under `12-{agent}/decision-review/`. Do not publish private review-state or lesson content. Read `references/workflow-discipline.md`.
+
+### QUALIFY — Retrieval And Context Trials
+
+Use qualification before adopting a new retrieval, context-index, semantic, or OpenViking-style pattern.
+
+Sequence:
+
+1. Build a golden set with real queries, negative cases, forbidden targets, and holdout items.
+2. Run the current baseline first: lexical search, existing graph/hybrid tools, and any already-approved query path.
+3. Write a gap report that names observed failure modes.
+4. Trial only the smallest read-only pattern that addresses one failure mode.
+5. Keep safety metrics at zero before any promotion discussion.
+
+Default rule: no measured failure mode, no new memory layer. Read `references/memory-qualification.md`.
+
+### RUNTIME SHADOW — Optional Dynamic Context Review
+
+Use runtime shadow work only when a local operator has built a private runtime layer and wants to test whether dynamic context is worth enabling.
+
+Rules:
+
+1. Keep runtime data outside the vault.
+2. Keep dynamic context advisory and off by default.
+3. Require reviewed gate evidence plus explicit operator approval before any switch is enabled.
+4. Treat promotion as immutable proposal first; canonical apply is a separate approval gate.
+5. Run fixed canaries and organic shadow sessions before considering persistent use.
+
+Do not publish local runtime reports, approval manifests, proposals, session drafts, or hook-run records.
 
 ### MEMORY — Loading Agent Context
 
@@ -222,6 +254,8 @@ Read `references/release-safety.md` for a concrete policy and command pattern.
 
 These tools are inspired by GBrain-style runtime discipline, but they do not introduce a DB, vector layer, MCP runtime, or auto-fix behavior. Read `references/operator-runtime.md`.
 
+For optional runtime safety gates, shadow sessions, promotion proposals, retention cleanup, and qualification-first context trials, read `references/operator-runtime.md` and `references/memory-qualification.md`.
+
 ---
 
 ## Core Rules
@@ -248,6 +282,7 @@ These tools are inspired by GBrain-style runtime discipline, but they do not int
 - `references/release-safety.md` — Git/RAW/provenance safety contract.
 - `references/bridge-health.md` — practical bridges between memory layers; not a full ontology.
 - `references/operator-runtime.md` — optional GBrain-inspired registry/retrieval/audit tools.
+- `references/memory-qualification.md` — qualification-first workflow for retrieval/context patterns.
 - `references/workflow-discipline.md` — portable Control Tower, branch close, decision review, and lesson review.
 - `references/setup.md` — first-time setup guide.
 - `references/graphify.md` — optional Graphify-inspired derived graph/retrieval layer; Obsidian markdown remains source of truth.

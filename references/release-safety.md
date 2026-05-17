@@ -27,6 +27,7 @@ Public skill generated artifacts:
 
 - commit final documentation assets such as `assets/brand/*.png` only when they are intentionally part of the public README;
 - do not commit image prompts, alternate drafts, local caches, screenshots, temporary reports, `graphify-out/`, `__pycache__/`, `.env`, logs, sqlite files, or build output.
+- do not commit private runtime memory artifacts such as local gate reports, approval manifests, promotion proposals, proposal lifecycle records, session drafts, or hook-run payloads.
 
 Optional external archive:
 
@@ -118,6 +119,7 @@ A useful `memory_operator.py check-all` command should run:
 7. RAW tracking check.
 8. Practical bridge health check.
 9. Optional retrieval/skill audit reports when relevant.
+10. Optional qualification report when a new retrieval/context pattern is being proposed.
 
 It should exit non-zero on blocking failures and may print non-blocking lint debt separately.
 

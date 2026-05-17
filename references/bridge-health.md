@@ -2,7 +2,7 @@
 
 This reference describes the ClaudSoul-style part that is intentionally adopted in this skill: practical bridges between memory layers.
 
-It does **not** adopt full ontology, persona architecture, autonomous promotion, or automatic canonical writes.
+It does **not** adopt full ontology, persona architecture, autonomous promotion, or direct canonical mutation without review.
 
 ---
 
