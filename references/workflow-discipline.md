@@ -10,7 +10,7 @@ For retrieval or dynamic-context changes, pair this workflow with `memory-qualif
 
 ## What This Adds
 
-The Control Tower layer contains five read-only boards plus one approval-gated lifecycle write:
+The Control Tower layer contains five read-only boards plus one approval-gated lifecycle write. It also documents an optional routing-feedback pattern for operators who need to understand whether skill routing, runtime changes, approvals, or memory improvements actually changed task quality.
 
 | Tool | Purpose | Writes by default |
 |---|---|---|
@@ -134,6 +134,43 @@ MEMORY_OPERATOR_APPROVED=1 python3 assets/operator/decision_review_board.py \
 ```
 
 The mark command appends a JSONL lifecycle record under `12-{agent}/decision-review/review-state.jsonl`. Do not publish real review-state from a private vault.
+
+---
+
+## Routing Feedback Ledger Pattern
+
+Use a routing feedback ledger when the operator sees agent skill selection improving or degrading but cannot tell why.
+
+This is a documented pattern, not a required bundled recorder. It is intentionally lighter than a trigger eval harness.
+
+Good candidates for a ledger draft:
+
+- an auto-selected skill materially changed a task;
+- runtime or approval behavior was surprising;
+- a long branch ended noticeably better or worse than usual;
+- a new hypothesis appeared about skill routing quality;
+- the user explicitly asked to record the branch.
+
+Record observations with evidence limits:
+
+- `routing_case_type`: `correct_helpful`, `unnecessary_skill`, `missed_skill`, `overheavy_workflow`, `skill_conflict`, `ceremony_without_quality`, `runtime_not_skill`, or `unknown`;
+- `evidence_level`: `user_feedback`, `outcome_proof`, `self_assessment`, or `unknown`;
+- `causal_confidence`: `low`, `medium`, or `high`;
+- runtime and approval metadata when relevant.
+
+Do not treat agent self-assessment as proof. Without user feedback or outcome proof, causal confidence should stay low. If runtime or approvals may explain the improvement, classify the source as runtime, approvals, mixed, or unknown rather than skill-only.
+
+Weekly review should produce action candidates, not another lifecycle board:
+
+- `skill_trigger_patch`;
+- `memory_rule`;
+- `runtime_check`;
+- `eval_candidate`;
+- `no_action`.
+
+After 10-20 entries, decide whether to keep the ledger, simplify it, pause it, or promote selected cases into a trigger eval corpus.
+
+Do not publish real routing ledger entries from a private vault. Use synthetic examples only. See `routing-feedback-ledger.md`.
 
 ---
 

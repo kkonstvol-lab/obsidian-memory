@@ -176,6 +176,8 @@ Recommended read-only checks:
 
 These reports are advisory by default. `decision-review-mark` is the only lifecycle write in this layer, and it must be approval-gated and append-only under `12-{agent}/decision-review/`. Do not publish private review-state or lesson content. Read `references/workflow-discipline.md`.
 
+If the operator is tuning agent skill routing, use the optional Routing Feedback Ledger pattern before creating a full trigger eval harness. It records significant branch-level observations with evidence level, causal confidence, routing case type, and runtime/approval metadata, then turns weekly review into action candidates. It is documented as a portable pattern rather than bundled as an automatic recorder. Read `references/routing-feedback-ledger.md`.
+
 ### QUALIFY — Retrieval And Context Trials
 
 Use qualification before adopting a new retrieval, context-index, semantic, or OpenViking-style pattern.

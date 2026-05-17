@@ -133,6 +133,7 @@ That label is part of the safety contract. The agent should still read direct so
 | `release_surface_check.py` | Check public-facing repo markers: README core narrative, hooks, graph/bridge, Control Tower visibility, license, attribution | read-only surface guard |
 | `decision_review_board.py` | Surface candidates for durable routing into decisions, wiki synthesis, runbooks, lessons, or public surface notes | read-only by default; mark is approval-gated |
 | `lesson_lint.py` / `lesson_review_board.py` | Validate and review private operational lessons before promotion | read-only; no activation |
+| Routing Feedback Ledger | Documented pattern for reviewing skill-routing quality with evidence level, causal confidence, and runtime/approval separation | recommended contract, not a bundled recorder |
 
 ---
 

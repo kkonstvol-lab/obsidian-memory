@@ -46,6 +46,10 @@ New retrieval or context patterns must earn their way in: golden set, baseline c
 
 Read-only release status, branch-close handoff, decision review, lesson review, and public release-surface checks help agents close work without losing decisions or over-promoting drafts.
 
+**Routing Feedback Ledger**
+
+An optional documented pattern helps operators review skill-routing quality without trusting agent self-report as fact: draft significant routing observations, label evidence strength and causal confidence, separate skill effects from runtime/approval effects, and use weekly reviews to generate action candidates rather than a second lifecycle board.
+
 **Graph / Bridge / Operator Tools** (`assets/graph/` + `assets/operator/`)
 
 Derived graph reports, bridge health checks, retrieval replay, operation registry, and skill resolver audits make memory drift visible without auto-mutating the vault.
@@ -158,6 +162,8 @@ The Control Tower layer is intentionally advisory:
 - `decision-review` surfaces candidates that may deserve durable routing into shared decisions, wiki synthesis, runbooks, lessons, or public surface notes.
 - `lesson-review` keeps private operational lessons in review state; promotion to pattern/principle remains human-reviewed and never automatic.
 
+For skill-routing quality, use the optional Routing Feedback Ledger pattern before building a full trigger eval harness. It records only significant branch-level observations, marks `evidence_level` and `causal_confidence`, separates `runtime_not_skill` cases from helpful skills, and turns weekly review into action candidates such as `skill_trigger_patch`, `runtime_check`, or `eval_candidate`. It is documented as a portable pattern, not shipped as a bundled runtime recorder. See `references/routing-feedback-ledger.md`.
+
 The lifecycle state for decision review is append-only and belongs under the local/private `12-{agent}/decision-review/` area. Do not publish real review-state or private lesson content.
 
 ## Safety Model
@@ -207,6 +213,7 @@ Restart the agent app after installing or updating skills.
 - `references/operator-runtime.md` - advisory runtime tools.
 - `references/memory-qualification.md` - golden-set, baseline, gap, and read-only trial gates.
 - `references/workflow-discipline.md` - Control Tower, branch close, decision review, and lesson review.
+- `references/routing-feedback-ledger.md` - optional skill-routing feedback pattern.
 - `references/release-safety.md` - RAW, provenance, Git, and artifact safety.
 
 ## Credits / Contributors
