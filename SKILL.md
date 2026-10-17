@@ -11,6 +11,10 @@ Use this skill only after an explicit user request. It touches an external vault
 
 ---
 
+## Local contract and project/task entry
+
+Load the local current contract first. For an identified project, read its project wing, the existing task STATUS and accepted owner documents before dependent work; refresh affected documents after a material change or resume. Do not create a duplicate checkpoint when STATUS exists. Accepted Markdown is the local read source after a verified sealed write; Git sync/publication is separate. Drawers/COMPILE and hooks are optional, not a saving prerequisite. Source evidence never creates execution authority. Follow the actual local standard/elevated boundary; policy/access/executable writes are not ordinary data. Generic optional examples below do not override that contract.
+
 ## Architecture
 
 Recommended vault layout:
@@ -217,13 +221,12 @@ Recommended roots:
 - Claude private: `12-claude/`
 - Optional project-local auxiliary layer: `agent-memory-{agent}/`
 
-Load in this order:
+Load only the relevant files in this order:
 
-1. `12-{agent}/memory_active.md` — current focus and blockers.
-2. `12-shared/memory_decisions.md` — durable shared conventions.
-3. `12-{agent}/memory_corrections.md` — last relevant process mistakes before non-trivial tasks.
-4. Domain/project files from `12-shared/` based on routing.
-5. At most two extra related files unless the user explicitly asks for a broad audit.
+1. Local current contract and explicit project wing.
+2. Existing task STATUS (or one stable-task checkpoint only if no STATUS exists).
+3. Accepted strategy/evidence owner documents as needed.
+4. Relevant shared/correct-agent private context; at most two related domains.
 
 Write rules:
 
