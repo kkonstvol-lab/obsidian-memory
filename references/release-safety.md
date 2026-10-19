@@ -1,5 +1,9 @@
 # Release Safety — Git, RAW, Provenance
 
+## Local saving is separate from Git release
+
+The local current contract governs read/write authority. Accepted ordinary data becomes locally saved/readable only after existing eligible sealed apply, postverify and direct canonical read; it need not wait for commit/push, knowledge release or runtime rebuild. This reference's Git/release checks apply to actual publication, not every routine read/save. Preserve required CI and provenance/private checks; source and installed selected copies retain their own reviewed baselines. This reference creates no new installer/hook/approval bypass.
+
 This reference describes a safe release contract for an Obsidian Memory vault.
 
 ---
@@ -89,7 +93,7 @@ Blocking failures:
 
 ## Pre-Commit Guard Pattern
 
-If you add scripts, provide a pre-commit hook that runs:
+For an actual commit/release use existing approved guards where required; the examples below do not authorize installing/changing hooks:
 
 ```bash
 python3 12-shared/scripts/git_raw_guard.py
@@ -143,7 +147,7 @@ Suggested default:
 
 - Keep local RAW PDF/DOCX/ZIP for at least 90 days after successful converted/wiki ingest.
 - After 90 days, mark as `eligible_for_cleanup`, but do not delete automatically.
-- Cleanup is plan/apply only and requires explicit user approval.
+- Agents never execute physical deletion, even with explicit approval; do not run cleanup or encode it in a wrapper. Retention flags are advisory review data, not authority to delete.
 
 Never propose cleanup if:
 
@@ -186,7 +190,7 @@ Prefer meaningful groups:
 
 Before each commit, inspect staged files and confirm no RAW binaries are staged.
 
-For long branches or public releases, add a Control Tower pass before the final claim:
+For a specifically relevant authorized long-branch/public-release review, the existing optional Control Tower reports below may help; they are not mandatory routine read/save gates and do not replace required CI:
 
 ```bash
 python3 assets/operator/branch_close_pack.py --root /path/to/vault --agent codex --md
