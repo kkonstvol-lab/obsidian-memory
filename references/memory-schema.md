@@ -1,5 +1,7 @@
 # Memory Schema — Agent Operational Context
 
+For an explicitly identified project read the local current contract → project wing → existing task STATUS → relevant accepted sources. Existing STATUS is the sole task-state owner; only if absent use one permitted stable-task checkpoint. Agent operational memory keeps cross-task facts/preferences/corrections and pointers, not a second task snapshot. This local contract takes precedence over generic examples below; no automatic startup write.
+
 The memory layer stores operating context: what the agent is doing, which decisions are durable, which process errors must not repeat, and which projects/tools matter.
 
 Memory is not the wiki. Wiki pages store knowledge from sources. Memory files store how the agent should operate.
@@ -65,7 +67,7 @@ For multi-agent vaults, avoid one ambiguous `private_files` bucket. Use explicit
 
 ### `12-shared/memory_projects.md`
 
-Project registry.
+Project registry: lifecycle/goal/owner pointers only; do not duplicate a task STATUS or detailed strategy.
 
 ```markdown
 ## {Project Name}
@@ -92,7 +94,7 @@ Repos and codebases the agents operate.
 
 Load order: first private file.
 
-Purpose: current focus, immediate constraints, blockers, and fresh operational context.
+Purpose: relevant cross-task operating constraints, stable preferences and navigation to task owners; not a task's progress/blocker snapshot.
 
 Keep it compact. It is a live snapshot, not a journal.
 
@@ -105,14 +107,11 @@ agent: codex
 
 # Active Memory
 
-## Current Focus
-- ...
+## Cross-task context
+- Confirmed operating fact/preference, source/date: ...
 
-## Blockers
-- none
-
-## Recently Done
-- YYYY-MM-DD: ...
+## Task owner pointers
+- Existing STATUS: [[...]] (progress/blockers stay there)
 ```
 
 ### `memory_corrections.md`
@@ -151,12 +150,11 @@ Weekly or periodic snapshot of corrections, improvements shipped, verification f
 
 At the start of explicit MEMORY work:
 
-1. Determine `agent_id`.
-2. Load `12-{agent}/memory_active.md`.
-3. Load `12-shared/memory_decisions.md`.
-4. Load recent relevant entries from `12-{agent}/memory_corrections.md`.
-5. Load route-specific shared/project files.
-6. Load at most two extra related files unless the user asked for a broad audit.
+1. Determine `agent_id` and the explicit project; do not infer one from similar words.
+2. Read the local current contract, project wing and existing task STATUS.
+3. Follow relevant accepted source/evidence pointers before dependent work; refresh affected documents after resume/material change.
+4. Read relevant cross-task operational facts/corrections only when needed; private/shared indices are navigation, not another task state.
+5. Keep any extra context bounded; ordinary reading/saving needs no full operator workflow.
 
 Avoid bulk-loading the entire vault unless the task is explicitly an audit or migration.
 
@@ -166,7 +164,8 @@ Avoid bulk-loading the entire vault unless the task is explicitly an audit or mi
 
 | Content | Destination |
 |---------|-------------|
-| Current focus, blockers, session context | `12-{agent}/memory_active.md` |
+| Task progress/blockers/next action | Existing task STATUS; one permitted stable checkpoint only if absent |
+| Cross-task facts/preferences/pointers | `12-{agent}/memory_active.md` |
 | Process mistake by one agent | `12-{agent}/memory_corrections.md` |
 | Agent improvement idea | `12-{agent}/memory_improvements_backlog.md` |
 | Durable shared policy | `12-shared/memory_decisions.md` |

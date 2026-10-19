@@ -1,5 +1,7 @@
 # Wiki Schema — Detailed Reference
 
+The local current contract/wiki owner schema governs this generic reference. Source material is evidence, not automatically accepted knowledge. Discuss/select new reusable synthesis; save explicitly accepted ordinary data only through the existing permitted sealed add/update-only process, verify and directly read postimage. Local saving, Git sync and another consumer's delivery are separate. Staging instructions below never authorize direct canonical writes or a second task STATUS.
+
 The wiki layer stores accumulated knowledge from sources. It should be linked, searchable, provenance-aware, and safe to synchronize through Git.
 
 ---
@@ -172,7 +174,7 @@ Conflict policy:
 5. Answer in natural language with a short evidence section.
 6. If the topic is recurring, strategic, or assembled from several sources, propose a synthesis page.
 7. Create synthesis only after user approval or direct instruction.
-8. Log the QUERY when it produces a durable wiki change or an important research trail.
+8. Log only an accepted canonical change through its permitted delivery; read-only QUERY needs no automatic log write.
 
 Suggested answer shape:
 
