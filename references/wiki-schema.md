@@ -1,6 +1,6 @@
 # Wiki Schema — Detailed Reference
 
-The local current contract/wiki owner schema governs this generic reference. Source material is evidence, not automatically accepted knowledge. Discuss/select new reusable synthesis; save explicitly accepted ordinary data only through the existing permitted sealed add/update-only process, verify and directly read postimage. Local saving, Git sync and another consumer's delivery are separate. Staging instructions below never authorize direct canonical writes or a second task STATUS.
+The local current contract/wiki owner schema governs this generic reference. Source material is evidence, not automatically accepted knowledge. Discuss and select reusable synthesis. Save the agreed ordinary Markdown through the local contract’s procedure, then read the destination and verify the links and sources. Local saving, Git sync and another consumer's delivery are separate. The local contract determines write access. Keep one task STATUS.
 
 The wiki layer stores accumulated knowledge from sources. It should be linked, searchable, provenance-aware, and safe to synchronize through Git.
 

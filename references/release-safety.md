@@ -2,7 +2,7 @@
 
 ## Local saving is separate from Git release
 
-The local current contract governs read/write authority. Accepted ordinary data becomes locally saved/readable only after existing eligible sealed apply, postverify and direct canonical read; it need not wait for commit/push, knowledge release or runtime rebuild. This reference's Git/release checks apply to actual publication, not every routine read/save. Preserve required CI and provenance/private checks; source and installed selected copies retain their own reviewed baselines. This reference creates no new installer/hook/approval bypass.
+The local current contract governs read/write authority. For accepted ordinary data, follow the local vault’s write procedure and read the result at its destination. Git publication has its own checks. This reference's Git/release checks apply to actual publication, not every routine read/save. Preserve required CI and provenance/private checks; source and installed selected copies retain their own reviewed baselines. This reference creates no new installer/hook/approval bypass.
 
 This reference describes a safe release contract for an Obsidian Memory vault.
 
